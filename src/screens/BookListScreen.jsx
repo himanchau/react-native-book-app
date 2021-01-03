@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
-  interpolate, Extrapolate, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler,
+  interpolate, Extrapolate, withTiming,
+  useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
 } from 'react-native-reanimated';
+import { useTheme, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SharedElement } from 'react-navigation-shared-element';
-import { useTheme } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import * as Haptics from 'expo-haptics';
@@ -15,6 +16,8 @@ import Button from '../components/Button';
 import List from '../components/BookList';
 
 const studies = require('../anims/studies.json');
+
+const LottieViewAnimated = Animated.createAnimatedComponent(LottieView);
 
 // Get morning, afternoon, evening
 const getGreeting = () => {
@@ -29,14 +32,14 @@ const getGreeting = () => {
 };
 
 // Default screen
-function BookList({ navigation, route }) {
+function BookList({ navigation }) {
   const { colors, margin, navbar } = useTheme();
   const [reading, setReading] = useState([]);
   const [completed, setCompleted] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [bookList, setBookList] = useState([]);
   const scrollY = useSharedValue(0);
-  const logoanim = useRef();
+  const timer = useSharedValue(0);
 
   // Scrollview handler
   const scrollHandler = useAnimatedScrollHandler({
@@ -45,17 +48,11 @@ function BookList({ navigation, route }) {
     },
   });
 
-  // Save data to async storage
-  const saveData = async () => {
-    await AsyncStorage.setItem('@lists', JSON.stringify(bookList));
-  };
-
   // Load data from async storage
   const loadData = async () => {
     const json = await AsyncStorage.getItem('@lists');
-    const data = json != null ? JSON.parse(json) : null;
-    setBookList(data || []);
-    logoanim.current.play(80, 110);
+    const data = json ? JSON.parse(json) : [];
+    setBookList(data);
   };
 
   // Go to search screen
@@ -64,10 +61,15 @@ function BookList({ navigation, route }) {
     navigation.navigate('BookSearch', { bookList });
   };
 
-  // On ready load data
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Reload books when focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+      if (timer.value === 0) {
+        timer.value = 1;
+      }
+    }, []),
+  );
 
   // Process and save list
   useEffect(() => {
@@ -88,16 +90,8 @@ function BookList({ navigation, route }) {
         setCompleted(cList);
         setWishlist(wList);
       });
-      saveData();
     }
   }, [bookList]);
-
-  // Get data back from search screen
-  useEffect(() => {
-    if (route.params?.bookList.length > 0) {
-      setBookList(route.params.bookList);
-    }
-  }, [route.params?.bookList]);
 
   // Animated Styles
   const anims = {
@@ -117,17 +111,22 @@ function BookList({ navigation, route }) {
       backgroundColor: colors.background,
       shadowOpacity: interpolate(scrollY.value, [0, 250, 260], [0, 0, 0.20], Extrapolate.CLAMP),
       transform: [
-        { scale: interpolate(scrollY.value, [-50, 0], [1.1, 1], Extrapolate.CLAMP) },
         { translateY: interpolate(scrollY.value, [0, 350 - navbar], [0, -350 + navbar], 'clamp') },
       ],
     })),
     logo: useAnimatedStyle(() => ({
       opacity: interpolate(scrollY.value, [0, 250], [1, 0], Extrapolate.CLAMP),
     })),
+    lottie: useAnimatedProps(() => ({
+      progress: scrollY.value
+        ? interpolate(scrollY.value, [-100, 0, 250], [0.4, 0.5, 0.6], 'clamp')
+        : withTiming(interpolate(timer.value, [0, 1], [0.1, 0.5], 'clamp'), { duration: 2500 }),
+    })),
     text: useAnimatedStyle(() => ({
       top: 10,
       transform: [
         { scale: interpolate(scrollY.value, [0, 250, 260], [1, 1, 0.90], Extrapolate.CLAMP) },
+        { translateY: interpolate(scrollY.value, [-100, 0], [10, 0], 'clamp') },
       ],
     })),
   };
@@ -171,13 +170,7 @@ function BookList({ navigation, route }) {
     <View style={styles.screen}>
       <Animated.View style={anims.header}>
         <Animated.View style={anims.logo}>
-          <LottieView
-            loop={false}
-            speed={0.75}
-            ref={logoanim}
-            source={studies}
-            style={styles.lottie}
-          />
+          <LottieViewAnimated source={studies} style={styles.lottie} animatedProps={anims.lottie} />
         </Animated.View>
         <Animated.View style={anims.text}>
           <Text size={21}>

@@ -1,16 +1,17 @@
 /* eslint-disable no-param-reassign */
 import React, { useState, useEffect } from 'react';
 import {
-  View, Image, StyleSheet, Alert,
+  View, Image, StyleSheet, Alert, StatusBar,
 } from 'react-native';
 import Animated, {
   withTiming, interpolate, Extrapolate, runOnJS,
   useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedGestureHandler,
 } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { SharedElement } from 'react-navigation-shared-element';
-import { useTheme } from '@react-navigation/native';
+import { useIsFocused, useTheme } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { parse } from 'fast-xml-parser';
 import * as Haptics from 'expo-haptics';
@@ -161,6 +162,7 @@ const BookHeader = React.memo(({
 function BookDetails({ navigation, route }) {
   const book = route.params?.book;
   const insets = useSafeAreaInsets();
+  const [bookList, setBookList] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
   const scrollY = useSharedValue(0);
@@ -170,6 +172,61 @@ function BookDetails({ navigation, route }) {
     margin, width, dark, colors,
   } = useTheme();
 
+  // Save data to async storage
+  const saveData = async () => {
+    await AsyncStorage.setItem('@lists', JSON.stringify(bookList));
+  };
+
+  // Load data from async storage
+  const loadData = async () => {
+    const json = await AsyncStorage.getItem('@lists');
+    const data = json != null ? JSON.parse(json) : null;
+    setBookList(data || []);
+  };
+
+  // Save data on list change
+  useEffect(() => {
+    if (bookList.length) {
+      saveData();
+    }
+  }, [bookList]);
+
+  // Add book to list
+  const addBook = () => {
+    Haptics.selectionAsync();
+    let status = 'Reading';
+
+    // Find item and update status if needed
+    const item = bookList.find((b) => b.bookId === book.bookId);
+    if (item) {
+      const index = bookList.indexOf(item);
+      switch (item.status) {
+        case 'Reading':
+          status = 'Completed';
+          break;
+        case 'Completed':
+          status = 'Wishlist';
+          break;
+        case 'Wishlist':
+          status = 'Remove';
+          break;
+        default:
+          status = 'Reading';
+          break;
+      }
+      setBookList((arr) => {
+        arr.splice(index, 1);
+        if (status === 'Remove') {
+          return [...arr];
+        }
+        return [{ ...item, status }, ...arr];
+      });
+    } else {
+      // Add to the list with reading status
+      setBookList((arr) => [{ ...book, status }, ...arr]);
+    }
+  };
+
   // Scroll handler
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -177,6 +234,7 @@ function BookDetails({ navigation, route }) {
 
   // Load book details
   useEffect(() => {
+    loadData();
     axios.get(`https://www.goodreads.com/book/show/${book.bookId}.xml?key=Bi8vh08utrMY3HAqM9rkWA`)
       .then((resp) => {
         const data = parse(resp.data);
@@ -265,9 +323,13 @@ function BookDetails({ navigation, route }) {
     },
   });
 
+  // Find book in list
+  const item = bookList.find((b) => b.bookId === book.bookId);
+
   // Render book details
   return (
     <View style={styles.screen}>
+      <StatusBar hidden={useIsFocused()} />
       <BookHeader scrollY={scrollY} x={x} y={y} book={book} navigation={navigation} />
       <AntDesign size={27} name="close" onPress={() => navigation.goBack()} style={styles.closeIcon} />
 
@@ -288,7 +350,7 @@ function BookDetails({ navigation, route }) {
             </View>
             <View style={styles.detailsRow}>
               <Text center size={13}>STATUS</Text>
-              <Text bold style={styles.subDetails}>{book.status}</Text>
+              <Text bold style={styles.subDetails}>{item ? item.status : '-'}</Text>
             </View>
           </View>
 
@@ -310,8 +372,8 @@ function BookDetails({ navigation, route }) {
         </Animated.ScrollView>
 
         <SafeAreaView edges={['bottom']} style={styles.footer}>
-          <Button onPress={() => navigation.navigate('BookList')}>
-            {book.status}
+          <Button onPress={addBook}>
+            {item ? item.status : 'Add to List'}
           </Button>
         </SafeAreaView>
       </Animated.View>

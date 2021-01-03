@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  Pressable, View, StyleSheet, StatusBar,
-} from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 import Animated, {
   useDerivedValue, withTiming, interpolate, Extrapolate, useAnimatedStyle, useSharedValue,
 } from 'react-native-reanimated';
@@ -25,7 +23,6 @@ const Book = ({ book, scrollX, index }) => {
   useFocusEffect(() => {
     if (navigation.isFocused()) {
       opacity.value = withTiming(1);
-      StatusBar.setHidden(false, 'fade');
     }
   });
 
@@ -33,7 +30,6 @@ const Book = ({ book, scrollX, index }) => {
   const bookDetails = () => {
     Haptics.selectionAsync();
     opacity.value = withTiming(0);
-    StatusBar.setHidden(true, 'fade');
     navigation.navigate('BookDetails', { book });
   };
 
@@ -49,9 +45,11 @@ const Book = ({ book, scrollX, index }) => {
         { perspective: 1000 },
         { scale: interpolate(position.value, inputRange, [0.9, 1, 1, 1], Extrapolate.CLAMP) },
         { rotateY: `${interpolate(position.value, inputRange, [80, 0, 0, 0], Extrapolate.CLAMP)}deg` },
-        { translateX: interpolate(position.value, inputRange, [BOOKW - BOOKW / 2, 0, 0, 0], Extrapolate.IDENTITY) },
+        { translateX: interpolate(position.value, inputRange, [BOOKW - BOOKW / 2, 0, 0, 0], 'clamp') },
       ],
-      opacity: opacity.value === 0 ? opacity.value : interpolate(position.value, inputRange, [0, 1, 1, 0.75], Extrapolate.CLAMP),
+      opacity: opacity.value === 0
+        ? opacity.value
+        : interpolate(position.value, inputRange, [0, 1, 1, 0.75], Extrapolate.CLAMP),
     })),
     bookImg: useAnimatedStyle(() => ({
       flex: 1,

@@ -18,6 +18,7 @@ function RootNavigator() {
 
   return (
     <BookStack.Navigator
+      initialRouteName="BookList"
       screenOptions={{
         headerShown: false,
         cardOverlayEnabled: true,

@@ -13,7 +13,6 @@ import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 
 import Text from '../components/Text';
-import Button from '../components/Button';
 
 const bookImg = require('../images/books.png');
 
@@ -54,52 +53,15 @@ const ListText = React.memo(({ list, book }) => {
 });
 
 // Render book
-const Book = React.memo(({
-  book, list, setList, count, setCount,
-}) => {
+const Book = React.memo(({ book, list }) => {
   const { margin } = useTheme();
   const navigation = useNavigation();
   const move = useSharedValue(0);
 
-  // Add book to list
-  const addBook = () => {
+  // View book details
+  const bookDetails = () => {
     Haptics.selectionAsync();
-    move.value = withTiming(1, {}, () => {
-      move.value = withTiming(0);
-    });
-    let status = 'Reading';
-
-    // Find item and update status if needed
-    const item = list.find((b) => b.bookId === book.bookId);
-    if (item) {
-      const index = list.indexOf(item);
-      switch (item.status) {
-        case 'Reading':
-          status = 'Completed';
-          break;
-        case 'Completed':
-          status = 'Wishlist';
-          break;
-        case 'Wishlist':
-          status = 'Remove';
-          break;
-        default:
-          status = 'Reading';
-          break;
-      }
-      setList((arr) => {
-        arr.splice(index, 1);
-        if (status === 'Remove') {
-          setCount(count - 1);
-          return [...arr];
-        }
-        return [{ ...item, status }, ...arr];
-      });
-    } else {
-      // Add to the list with reading status
-      setList((arr) => [{ ...book, status }, ...arr]);
-    }
-    setCount(count + 1);
+    navigation.navigate('BookDetails', { book });
   };
 
   // Animated styles
@@ -135,9 +97,9 @@ const Book = React.memo(({
 
   // Render Book
   return (
-    <Pressable onPress={() => navigation.navigate('BookDetails', { book })} style={styles.bookBox}>
+    <Pressable onPress={bookDetails} style={styles.bookBox}>
       <View style={styles.bookCover}>
-        <SharedElement style={{ flex: 1 }} id={book.bookId}>
+        <SharedElement id={book.bookId}>
           <Animated.Image style={imageStyles} source={{ uri: book.imageUrl }} />
         </SharedElement>
       </View>
@@ -157,10 +119,9 @@ const Book = React.memo(({
 
 // Default screen
 function SearchScreen({ navigation, route }) {
+  const list = route.params?.bookList || [];
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
-  const [list, setList] = useState(route.params?.bookList || []);
-  const [count, setCount] = useState(0);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
   const {
@@ -249,7 +210,7 @@ function SearchScreen({ navigation, route }) {
     saveButton: {
       width: 70,
       textAlign: 'right',
-      color: count > 0 ? '#27ae60' : '#888',
+      color: '#888888',
     },
     placeholderBox: {
       marginTop: margin * 2,
@@ -263,6 +224,9 @@ function SearchScreen({ navigation, route }) {
     placeholderText: {
       marginVertical: margin,
       paddingHorizontal: margin * 3,
+    },
+    scrollContainer: {
+      padding: margin,
     },
   });
 
@@ -292,9 +256,7 @@ function SearchScreen({ navigation, route }) {
           style={styles.searchInput}
         />
         <Pressable onPress={goBack}>
-          <Text bold style={styles.saveButton}>
-            {count > 0 ? ' Save' : 'Cancel'}
-          </Text>
+          <Text bold style={styles.saveButton}>Done</Text>
         </Pressable>
       </Animated.View>
 
@@ -303,20 +265,11 @@ function SearchScreen({ navigation, route }) {
         scrollEventThrottle={8}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: margin }}
+        contentContainerStyle={styles.scrollContainer}
         style={anims.scrollView}
       >
         {!books.length && <PlaceHolder />}
-        {books.map((book) => (
-          <Book
-            key={book.bookId}
-            book={book}
-            list={list}
-            count={count}
-            setList={setList}
-            setCount={setCount}
-          />
-        ))}
+        {books.map((book) => <Book key={book.bookId} list={list} book={book} />)}
       </Animated.ScrollView>
     </View>
   );
