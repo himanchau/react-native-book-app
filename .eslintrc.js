@@ -23,4 +23,3 @@ module.exports = {
     'import/no-unresolved': 0,
   },
 };
-

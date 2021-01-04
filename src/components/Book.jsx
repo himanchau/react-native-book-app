@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, View, StyleSheet } from 'react-native';
+import {
+  Pressable, View, Image, StyleSheet,
+} from 'react-native';
 import Animated, {
   useDerivedValue, withTiming, interpolate, Extrapolate, useAnimatedStyle, useSharedValue,
 } from 'react-native-reanimated';
@@ -10,12 +12,12 @@ import * as Haptics from 'expo-haptics';
 import Text from './Text';
 
 // Single book component
-const Book = ({ book, scrollX, index }) => {
+function Book({ book, scrollX, index }) {
   const navigation = useNavigation();
-  const { width, margin } = useTheme();
-  const BOOKW = width / 2.5;
+  const { margin, normalize } = useTheme();
+  const BOOKW = normalize(150, 180);
   const BOOKH = BOOKW * 1.5;
-  const position = useDerivedValue(() => (index + 0.00001) * (BOOKW) - scrollX.value);
+  const position = useDerivedValue(() => (index + 0.00001) * (BOOKW + margin) - scrollX.value);
   const inputRange = [-BOOKW, 0, BOOKW, BOOKW * 3];
   const opacity = useSharedValue(1);
 
@@ -36,58 +38,50 @@ const Book = ({ book, scrollX, index }) => {
   // Animated styles
   const anims = {
     book: useAnimatedStyle(() => ({
-      width: BOOKW,
-      height: BOOKH,
-      shadowRadius: 5,
-      shadowOpacity: 0.5,
-      shadowOffset: { width: 5, height: 5 },
+      opacity: opacity.value,
       transform: [
-        { perspective: 1000 },
+        { perspective: 800 },
         { scale: interpolate(position.value, inputRange, [0.9, 1, 1, 1], Extrapolate.CLAMP) },
-        { rotateY: `${interpolate(position.value, inputRange, [80, 0, 0, 0], Extrapolate.CLAMP)}deg` },
-        { translateX: interpolate(position.value, inputRange, [BOOKW - BOOKW / 2, 0, 0, 0], 'clamp') },
-      ],
-      opacity: opacity.value === 0
-        ? opacity.value
-        : interpolate(position.value, inputRange, [0, 1, 1, 0.75], Extrapolate.CLAMP),
-    })),
-    bookImg: useAnimatedStyle(() => ({
-      flex: 1,
-      borderRadius: 10,
-      transform: [
-        { scale: interpolate(position.value, inputRange, [1, 1, 1, 1.2], Extrapolate.CLAMP) },
+        { rotateY: `${interpolate(position.value, inputRange, [60, 0, 0, 0], Extrapolate.CLAMP)}deg` },
+        { translateX: interpolate(position.value, inputRange, [BOOKW / 4, 0, 0, 0], 'clamp') },
       ],
     })),
   };
 
   // Styles
   const styles = StyleSheet.create({
+    imgBox: {
+      marginRight: margin,
+      borderRadius: 10,
+      shadowRadius: 5,
+      shadowOpacity: 0.5,
+      shadowOffset: { width: 5, height: 5 },
+    },
+    bookImg: {
+      width: BOOKW,
+      height: BOOKH,
+      borderRadius: 10,
+    },
     bookText: {
       marginRight: margin,
       marginTop: margin / 2,
-    },
-    bookBox: {
-      flex: 1,
-      marginRight: margin,
-      overflow: 'hidden',
-      borderRadius: 10,
     },
   });
 
   return (
     <Pressable onPress={bookDetails}>
       <Animated.View style={anims.book}>
-        <View style={styles.bookBox}>
-          <SharedElement style={{ flex: 1 }} id={book.bookId}>
-            <Animated.Image style={anims.bookImg} source={{ uri: book.imageUrl }} />
-          </SharedElement>
-        </View>
+        <SharedElement id={book.bookId}>
+          <View style={styles.imgBox}>
+            <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
+          </View>
+        </SharedElement>
         <Text size={13} numberOfLines={1} center style={styles.bookText}>
           {book.author.name}
         </Text>
       </Animated.View>
     </Pressable>
   );
-};
+}
 
 export default React.memo(Book);

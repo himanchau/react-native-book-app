@@ -10,12 +10,10 @@ import Book from './Book';
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // Horizontal list of books
-const BookList = ({ books, title }) => {
+function BookList({ books, title }) {
   const { width, margin, colors } = useTheme();
   const navigation = useNavigation();
   const scrollX = useSharedValue(0);
-  const BOOKW = width / 2.5;
-  const BOOKH = BOOKW * 1.5;
 
   // Handle horizontal scroll
   const scrollHandler = useAnimatedScrollHandler({
@@ -39,14 +37,13 @@ const BookList = ({ books, title }) => {
     },
     listContainer: {
       padding: margin,
-      minHeight: BOOKH,
     },
     emptyContainer: {
-      minHeight: BOOKH,
       borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
       width: width - margin * 2,
+      paddingVertical: margin * 2,
       backgroundColor: colors.background,
     },
     emptyText: {
@@ -73,8 +70,6 @@ const BookList = ({ books, title }) => {
       </View>
       <AnimatedFlatList
         horizontal
-        decelerationRate="fast"
-        snapToInterval={BOOKW}
         onScroll={scrollHandler}
         scrollEventThrottle={8}
         showsHorizontalScrollIndicator={false}
@@ -88,6 +83,6 @@ const BookList = ({ books, title }) => {
       />
     </View>
   );
-};
+}
 
 export default React.memo(BookList);

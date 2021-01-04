@@ -138,8 +138,8 @@ function BookList({ navigation }) {
       backgroundColor: colors.background,
     },
     lottie: {
-      top: 5,
-      width: '80%',
+      bottom: 2,
+      height: '109%',
     },
     scrollView: {
       paddingTop: 350,
