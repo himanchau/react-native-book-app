@@ -15,7 +15,7 @@ import Text from './Text';
 function Book({ book, scrollX, index }) {
   const navigation = useNavigation();
   const { margin, normalize } = useTheme();
-  const BOOKW = normalize(150, 180);
+  const BOOKW = normalize(130, 160);
   const BOOKH = BOOKW * 1.5;
   const position = useDerivedValue(() => (index + 0.00001) * (BOOKW + margin) - scrollX.value);
   const inputRange = [-BOOKW, 0, BOOKW, BOOKW * 3];

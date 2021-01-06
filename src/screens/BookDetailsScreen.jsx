@@ -1,12 +1,14 @@
 /* eslint-disable no-param-reassign */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Image, StyleSheet, Alert, StatusBar,
 } from 'react-native';
 import Animated, {
-  interpolate, Extrapolate, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, withTiming,
+  interpolate, withTiming, runOnJS,
+  useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PanGestureHandler, ScrollView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused, useTheme } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
@@ -18,20 +20,24 @@ import Text from '../components/Text';
 import Button from '../components/Button';
 import BookHeader from '../components/BookHeader';
 
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
 // Default screen
 function BookDetails({ navigation, route }) {
   const book = route.params?.book;
-  const insets = useSafeAreaInsets();
   const [bookList, setBookList] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
+  const [enabled, setEnabled] = useState(true);
+  const ref = useRef();
   const loaded = useSharedValue(0);
-  const scrollY = useSharedValue(0);
-  const x = useSharedValue(0);
   const y = useSharedValue(0);
+  const closing = useSharedValue(0);
+  const scrollY = useSharedValue(0);
   const {
-    margin, width, dark, colors,
+    margin, width, dark, colors, normalize, status,
   } = useTheme();
+  const HEADER = normalize(width + status, 500) + margin;
 
   // Save data to async storage
   const saveData = async () => {
@@ -91,11 +97,42 @@ function BookDetails({ navigation, route }) {
   // Scroll handler
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
+    if (event.contentOffset.y <= 0 && !enabled) {
+      runOnJS(setEnabled)(true);
+    }
+    if (event.contentOffset.y > 0 && enabled) {
+      runOnJS(setEnabled)(false);
+    }
+  });
+
+  // Pan gesture handler
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_, ctx) => {
+      ctx.startY = y.value;
+    },
+    onActive: (e, ctx) => {
+      y.value = ctx.startY + e.translationY;
+
+      // See if closing screen
+      const flung = e.velocityY >= 250 || y.value >= 75;
+      if (flung && !closing.value) {
+        closing.value = 1;
+        runOnJS(navigation.goBack)();
+        runOnJS(Haptics.selectionAsync)();
+      }
+    },
+    onEnd: (e) => {
+      if (y.value < 75 && e.velocityY < 250) {
+        y.value = withTiming(0);
+      }
+    },
   });
 
   // Load book details
   useEffect(() => {
     loadData();
+
+    // Book details
     axios.get(`https://www.goodreads.com/book/show/${book.bookId}.xml?key=Bi8vh08utrMY3HAqM9rkWA`)
       .then((resp) => {
         const data = parse(resp.data);
@@ -121,33 +158,41 @@ function BookDetails({ navigation, route }) {
   const anims = {
     screen: useAnimatedStyle(() => ({
       flex: 1,
+      shadowRadius: 10,
+      shadowOpacity: 0.5,
+      shadowOffset: { height: 5 },
+      transform: [
+        { translateY: y.value },
+        { scale: interpolate(y.value, [0, 75], [1, 0.90], 'clamp') },
+      ],
+    })),
+    scrollView: useAnimatedStyle(() => ({
+      flex: 1,
+      borderRadius: 20,
       backgroundColor: colors.background,
-      opacity: interpolate(y.value, [0, 50], [1, 0], Extrapolate.CLAMP),
     })),
     details: useAnimatedStyle(() => ({
       opacity: loaded.value,
       transform: [
-        { translateY: interpolate(loaded.value, [0, 1], [20, 0], Extrapolate.CLAMP) },
+        { translateY: interpolate(loaded.value, [0, 1], [20, 0], 'clamp') },
       ],
     })),
   };
 
   // Styles
   const styles = StyleSheet.create({
-    screen: {
-      flex: 1,
-    },
     closeIcon: {
       zIndex: 10,
       top: margin,
       right: margin,
+      opacity: 0.75,
       color: colors.text,
       position: 'absolute',
     },
     scrollContainer: {
       padding: margin,
-      paddingTop: width + insets.top + margin,
-      paddingBottom: insets.bottom + margin + 50,
+      paddingTop: HEADER,
+      paddingBottom: status + margin + 50,
     },
     detailsBox: {
       borderRadius: 10,
@@ -187,7 +232,6 @@ function BookDetails({ navigation, route }) {
     aboutBook: {
       lineHeight: 25,
       marginTop: margin,
-      textAlign: 'justify',
     },
     footer: {
       left: 0,
@@ -203,55 +247,64 @@ function BookDetails({ navigation, route }) {
 
   // Render book details
   return (
-    <View style={styles.screen}>
-      <StatusBar hidden={useIsFocused()} />
-      <BookHeader scrollY={scrollY} x={x} y={y} book={book} navigation={navigation} />
-      <AntDesign size={27} name="close" onPress={() => navigation.goBack()} style={styles.closeIcon} />
-
+    <PanGestureHandler
+      ref={ref}
+      failOffsetY={-5}
+      activeOffsetY={5}
+      enabled={enabled}
+      onGestureEvent={gestureHandler}
+    >
       <Animated.View style={anims.screen}>
-        <Animated.ScrollView
-          onScroll={scrollHandler}
-          scrollEventThrottle={8}
-          contentContainerStyle={styles.scrollContainer}
-        >
-          <View style={styles.detailsBox}>
-            <View style={styles.detailsRow}>
-              <Text center size={13}>RATING</Text>
-              <Text bold style={styles.subDetails}>{book.avgRating}</Text>
-            </View>
-            <View style={[styles.detailsRow, styles.detailsRowBorder]}>
-              <Text center size={13}>PAGES</Text>
-              <Text bold style={styles.subDetails}>{book.numPages}</Text>
-            </View>
-            <View style={styles.detailsRow}>
-              <Text center size={13}>STATUS</Text>
-              <Text bold color={colors.primary} style={styles.subDetails}>{item ? item.status : '-'}</Text>
-            </View>
-          </View>
+        <StatusBar hidden={useIsFocused()} />
+        <BookHeader scrollY={scrollY} y={y} book={book} navigation={navigation} />
+        <AntDesign size={27} name="close" onPress={() => navigation.goBack()} style={styles.closeIcon} />
 
-          <Animated.View style={anims.details}>
-            <View style={styles.authorBox}>
-              <Image source={{ uri: author?.image_url }} style={styles.authorImage} />
-              <View>
-                <Text bold size={17}>{author?.name || '...'}</Text>
-                <Text numberOfLines={2} style={styles.authorDetails}>
-                  {author?.about.replace(/(<([^>]+)>)/ig, '')}
-                </Text>
+        <Animated.View style={anims.scrollView}>
+          <AnimatedScrollView
+            waitFor={enabled ? ref : undefined}
+            onScroll={scrollHandler}
+            scrollEventThrottle={8}
+            contentContainerStyle={styles.scrollContainer}
+          >
+            <View style={styles.detailsBox}>
+              <View style={styles.detailsRow}>
+                <Text center size={13}>RATING</Text>
+                <Text bold style={styles.subDetails}>{book.avgRating}</Text>
+              </View>
+              <View style={[styles.detailsRow, styles.detailsRowBorder]}>
+                <Text center size={13}>PAGES</Text>
+                <Text bold style={styles.subDetails}>{book.numPages}</Text>
+              </View>
+              <View style={styles.detailsRow}>
+                <Text center size={13}>STATUS</Text>
+                <Text bold color={colors.primary} style={styles.subDetails}>{item ? item.status : '-'}</Text>
               </View>
             </View>
-            <Text size={16} style={styles.aboutBook}>
-              {fullBook?.description.replace(/(<([^>]+)>)/ig, '')}
-            </Text>
-          </Animated.View>
-        </Animated.ScrollView>
 
-        <SafeAreaView edges={['bottom']} style={styles.footer}>
-          <Button onPress={addBook}>
-            {item ? item.status : 'Add to List'}
-          </Button>
-        </SafeAreaView>
+            <Animated.View style={anims.details}>
+              <View style={styles.authorBox}>
+                <Image source={{ uri: author?.image_url }} style={styles.authorImage} />
+                <View>
+                  <Text bold size={17}>{author?.name || '...'}</Text>
+                  <Text numberOfLines={2} style={styles.authorDetails}>
+                    {author?.about.replace(/(<([^>]+)>)/ig, '')}
+                  </Text>
+                </View>
+              </View>
+              <Text size={16} style={styles.aboutBook}>
+                {fullBook?.description.replace(/(<([^>]+)>)/ig, '')}
+              </Text>
+            </Animated.View>
+          </AnimatedScrollView>
+
+          <SafeAreaView edges={['bottom']} style={styles.footer}>
+            <Button onPress={addBook}>
+              {item ? item.status : 'Add to List'}
+            </Button>
+          </SafeAreaView>
+        </Animated.View>
       </Animated.View>
-    </View>
+    </PanGestureHandler>
   );
 }
 

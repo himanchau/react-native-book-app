@@ -18,45 +18,22 @@ const bookImg = require('../images/books.png');
 
 // Star rating
 const Rating = React.memo(({ rating }) => (
-  <View style={{ width: 85, flexDirection: 'row', justifyContent: 'space-between' }}>
-    <FontAwesome size={16} name={rating < 0.5 ? 'star-o' : rating < 0.5 ? 'star-half-o' : 'star'} color="#f1c40f" />
-    <FontAwesome size={16} name={rating < 1.5 ? 'star-o' : rating < 1.5 ? 'star-half-o' : 'star'} color="#f1c40f" />
-    <FontAwesome size={16} name={rating < 2.5 ? 'star-o' : rating < 2.5 ? 'star-half-o' : 'star'} color="#f1c40f" />
-    <FontAwesome size={16} name={rating < 3.5 ? 'star-o' : rating < 3.5 ? 'star-half-o' : 'star'} color="#f1c40f" />
-    <FontAwesome size={16} name={rating < 4.5 ? 'star-o' : rating < 4.5 ? 'star-half-o' : 'star'} color="#f1c40f" />
+  <View style={{ width: 90, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <FontAwesome size={16} name={rating < 0.5 ? 'star-o' : rating < 0.5 ? 'star-half-o' : 'star'} color="#f39c12" />
+    <FontAwesome size={16} name={rating < 1.5 ? 'star-o' : rating < 1.5 ? 'star-half-o' : 'star'} color="#f39c12" />
+    <FontAwesome size={16} name={rating < 2.5 ? 'star-o' : rating < 2.5 ? 'star-half-o' : 'star'} color="#f39c12" />
+    <FontAwesome size={16} name={rating < 3.5 ? 'star-o' : rating < 3.5 ? 'star-half-o' : 'star'} color="#f39c12" />
+    <FontAwesome size={16} name={rating < 4.5 ? 'star-o' : rating < 4.5 ? 'star-half-o' : 'star'} color="#f39c12" />
   </View>
 ));
 
-// What the button text should be
-const ListText = React.memo(({ list, book }) => {
-  const move = useSharedValue(0);
-  const item = list.find((b) => b.bookId === book.bookId);
-  move.value = item ? 1 : 0;
-
-  // animate text up
-  const anims = useAnimatedStyle(() => ({
-    opacity: withTiming(move.value ? 1 : 0),
-    height: withTiming(move.value ? 25 : 0),
-  }));
-
-  const styles = StyleSheet.compose({
-    color: '#27ae60',
-  });
-
-  return (
-    <Animated.View style={anims}>
-      <Text bold size={13} style={styles}>
-        {item?.status}
-      </Text>
-    </Animated.View>
-  );
-});
-
 // Render book
-const Book = React.memo(({ book, list }) => {
-  const { margin } = useTheme();
+const Book = React.memo(({ book, bookList }) => {
+  const { margin, colors, normalize } = useTheme();
   const navigation = useNavigation();
-  const move = useSharedValue(0);
+  const BOOKW = normalize(120, 150);
+  const BOOKH = BOOKW * 1.5;
+  const item = bookList.find((b) => b.bookId === book.bookId);
 
   // View book details
   const bookDetails = () => {
@@ -64,26 +41,22 @@ const Book = React.memo(({ book, list }) => {
     navigation.navigate('BookDetails', { book });
   };
 
-  // Animated styles
-  const imageStyles = useAnimatedStyle(() => ({
-    width: 120,
-    height: 180,
-    borderRadius: 10,
-    transform: [
-      { translateX: interpolate(move.value, [0, 1], [0, margin / 2], Extrapolate.CLAMP) },
-    ],
-  }));
-
   // Styles
   const styles = StyleSheet.create({
     bookBox: {
       flexDirection: 'row',
       marginBottom: margin * 1.5,
     },
-    bookCover: {
+    imgBox: {
+      borderRadius: 10,
       shadowRadius: 5,
       shadowOpacity: 0.5,
       shadowOffset: { width: 5, height: 5 },
+    },
+    bookImg: {
+      width: BOOKW,
+      height: BOOKH,
+      borderRadius: 10,
     },
     bookDetails: {
       flex: 1,
@@ -91,24 +64,29 @@ const Book = React.memo(({ book, list }) => {
       paddingLeft: margin * 1.5,
     },
     bookAuthor: {
-      marginVertical: margin / 2,
+      marginVertical: margin / 4,
     },
   });
 
   // Render Book
   return (
     <Pressable onPress={bookDetails} style={styles.bookBox}>
-      <View style={styles.bookCover}>
-        <SharedElement id={book.bookId}>
-          <Animated.Image style={imageStyles} source={{ uri: book.imageUrl }} />
-        </SharedElement>
-      </View>
+      <SharedElement id={book.bookId}>
+        <View style={styles.imgBox}>
+          <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
+        </View>
+      </SharedElement>
+
       <View style={styles.bookDetails}>
-        <ListText list={list} book={book} />
+        {item?.status && (
+          <Text bold color={colors.primary}>
+            {item.status}
+          </Text>
+        )}
         <Text bold size={17} numberOfLines={2}>
           {book.bookTitleBare}
         </Text>
-        <Text size={14} style={styles.bookAuthor}>
+        <Text style={styles.bookAuthor}>
           {book.author.name}
         </Text>
         <Rating rating={book.avgRating} />
@@ -119,7 +97,7 @@ const Book = React.memo(({ book, list }) => {
 
 // Default screen
 function SearchScreen({ navigation, route }) {
-  const list = route.params?.bookList || [];
+  const bookList = route.params?.bookList;
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
   const scrollY = useSharedValue(0);
@@ -137,7 +115,7 @@ function SearchScreen({ navigation, route }) {
   const goBack = () => {
     loaded.value = withTiming(0);
     Haptics.selectionAsync();
-    navigation.navigate('BookList', { bookList: list });
+    navigation.navigate('BookList');
   };
 
   // Search
@@ -269,7 +247,7 @@ function SearchScreen({ navigation, route }) {
         style={anims.scrollView}
       >
         {!books.length && <PlaceHolder />}
-        {books.map((book) => <Book key={book.bookId} list={list} book={book} />)}
+        {books.map((book) => <Book key={book.bookId} book={book} bookList={bookList} />)}
       </Animated.ScrollView>
     </View>
   );

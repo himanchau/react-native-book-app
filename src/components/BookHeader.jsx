@@ -1,73 +1,37 @@
 /* eslint-disable no-param-reassign */
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import Animated, {
-  withTiming, interpolate, Extrapolate, runOnJS,
-  useAnimatedStyle, useSharedValue, useAnimatedGestureHandler,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PanGestureHandler } from 'react-native-gesture-handler';
+import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { SharedElement } from 'react-navigation-shared-element';
 import { useTheme } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
 
 import Text from './Text';
 
 // Load a single book
-function BookHeader({
-  scrollY, book, x, y, navigation,
-}) {
+function BookHeader({ scrollY, book }) {
   const {
-    width, margin, dark, normalize,
+    width, margin, colors, normalize, navbar, status,
   } = useTheme();
-  const insets = useSafeAreaInsets();
-  const moving = useSharedValue(0);
-  const closing = useSharedValue(0);
-  const BOOKW = normalize(150, 180);
+  const BOOKW = normalize(140, 180);
   const BOOKH = BOOKW * 1.5;
-
-  // Pan gesture handler
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (_, ctx) => {
-      ctx.startX = x.value;
-      ctx.startY = y.value;
-      moving.value = 1;
-    },
-    onActive: (e, ctx) => {
-      x.value = ctx.startX + e.translationX;
-      y.value = ctx.startY + e.translationY;
-
-      // See if closing screen
-      const flung = Math.abs(e.velocityX) > 250 || Math.abs(y.value) >= 50;
-      if (flung && !closing.value) {
-        closing.value = 1;
-        runOnJS(navigation.goBack)();
-        runOnJS(Haptics.selectionAsync)();
-      }
-    },
-    onEnd: () => {
-      if (y.value < 50) {
-        x.value = withTiming(0);
-        y.value = withTiming(0);
-      }
-      moving.value = 0;
-    },
-  });
+  const HEADER = normalize(width + status, 500);
 
   // Animated styles
   const anims = {
     header: useAnimatedStyle(() => ({
       width,
       zIndex: 10,
+      height: HEADER,
+      paddingTop: status,
       position: 'absolute',
       justifyContent: 'center',
-      paddingTop: insets.top,
-      height: width + insets.top,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
       shadowOffset: { height: 2 },
-      backgroundColor: dark ? `rgba(0,0,0,${interpolate(y.value, [0, 50], [1, 0])})` : `rgba(255,255,255,${interpolate(y.value, [0, 50], [1, 0])})`,
-      shadowOpacity: interpolate(scrollY.value, [width - 44, width - 20], [0, 0.5], 'clamp'),
+      backgroundColor: colors.card,
+      shadowOpacity: interpolate(scrollY.value, [HEADER - navbar - 20, HEADER - navbar], [0, 0.25], 'clamp'),
       transform: [
-        { translateY: interpolate(scrollY.value, [0, width - 44], [0, -width + 44], 'clamp') },
+        { translateY: interpolate(scrollY.value, [0, HEADER - navbar], [0, -HEADER + navbar], 'clamp') },
       ],
     })),
     bg: useAnimatedStyle(() => ({
@@ -75,29 +39,26 @@ function BookHeader({
       left: 0,
       right: 0,
       bottom: 0,
+      opacity: 0.5,
       position: 'absolute',
-      opacity: interpolate(y.value, [0, 50], [0.5, 0], Extrapolate.CLAMP),
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
     })),
     cover: useAnimatedStyle(() => ({
-      zIndex: 10,
       alignItems: 'center',
-      opacity: interpolate(scrollY.value, [0, width - 44], [1, 0], Extrapolate.CLAMP),
+      opacity: interpolate(scrollY.value, [HEADER - navbar - 20, HEADER - navbar], [1, 0], 'clamp'),
       transform: [
-        { scale: interpolate(scrollY.value, [-50, 0], [1.1, 1], Extrapolate.CLAMP) },
-        { translateX: x.value },
-        { translateY: y.value },
+        { translateY: interpolate(scrollY.value, [0, HEADER / 6], [0, HEADER / 6], 'clamp') },
       ],
     })),
     title: useAnimatedStyle(() => ({
-      alignItems: 'center',
       paddingTop: margin,
+      alignItems: 'center',
       paddingHorizontal: margin * 3,
       transform: [
-        { translateY: interpolate(scrollY.value, [-50, 0], [20, 0], Extrapolate.CLAMP) },
+        { translateY: interpolate(scrollY.value, [-50, 0], [20, 0], 'clamp') },
       ],
-      opacity: moving.value
-        ? interpolate(y.value, [0, 50], [1, 0], Extrapolate.CLAMP)
-        : interpolate(scrollY.value, [0, width - 44], [1, 0], Extrapolate.CLAMP),
+      opacity: interpolate(scrollY.value, [0, 30], [1, 0], 'clamp'),
     })),
     title2: useAnimatedStyle(() => ({
       left: 0,
@@ -108,7 +69,7 @@ function BookHeader({
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: margin,
-      opacity: interpolate(scrollY.value, [width - 44, width], [0, 1], Extrapolate.CLAMP),
+      opacity: interpolate(scrollY.value, [HEADER - navbar - 20, HEADER - navbar], [0, 1], 'clamp'),
     })),
   };
 
@@ -131,30 +92,28 @@ function BookHeader({
   });
 
   return (
-    <PanGestureHandler onGestureEvent={gestureHandler}>
-      <Animated.View style={anims.header}>
-        <Animated.Image blurRadius={15} style={anims.bg} source={{ uri: book.imageUrl }} />
+    <Animated.View style={anims.header}>
+      <Animated.Image blurRadius={15} style={anims.bg} source={{ uri: book.imageUrl }} />
 
-        <Animated.View style={anims.cover}>
-          <SharedElement id={book.bookId}>
-            <View style={styles.imgBox}>
-              <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
-            </View>
-          </SharedElement>
-        </Animated.View>
-
-        <Animated.View style={anims.title}>
-          <Text bold center size={21}>{book.bookTitleBare}</Text>
-          <Text size={15} style={styles.author}>{`by ${book.author.name}`}</Text>
-        </Animated.View>
-
-        <Animated.View style={anims.title2}>
-          <Text numberOfLines={1} bold size={17}>
-            {book.bookTitleBare}
-          </Text>
-        </Animated.View>
+      <Animated.View style={anims.cover}>
+        <SharedElement id={book.bookId}>
+          <View style={styles.imgBox}>
+            <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
+          </View>
+        </SharedElement>
       </Animated.View>
-    </PanGestureHandler>
+
+      <Animated.View style={anims.title}>
+        <Text bold center size={21}>{book.bookTitleBare}</Text>
+        <Text size={17} style={styles.author}>{`by ${book.author.name}`}</Text>
+      </Animated.View>
+
+      <Animated.View style={anims.title2}>
+        <Text numberOfLines={1} bold size={17}>
+          {book.bookTitleBare}
+        </Text>
+      </Animated.View>
+    </Animated.View>
   );
 }
 

@@ -19,7 +19,7 @@ function ThemedButton({
       justifyContent: 'center',
       shadowRadius: 0,
       shadowOpacity: 1,
-      shadowColor: colors.shadow,
+      shadowColor: colors.primary,
       shadowOffset: { width: 3, height: 3 },
       backgroundColor: colors.button,
     },
