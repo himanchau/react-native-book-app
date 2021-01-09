@@ -111,18 +111,18 @@ function BookDetails({ navigation, route }) {
       ctx.startY = y.value;
     },
     onActive: (e, ctx) => {
-      y.value = ctx.startY + e.translationY;
+      const moved = ctx.startY + e.translationY;
+      y.value = moved > 0 ? moved : 0;
 
       // See if closing screen
-      const flung = e.velocityY >= 250 || y.value >= 75;
-      if (flung && !closing.value) {
+      if ((y.value >= 75 || e.velocityY >= 500) && !closing.value) {
         closing.value = 1;
         runOnJS(navigation.goBack)();
         runOnJS(Haptics.selectionAsync)();
       }
     },
     onEnd: (e) => {
-      if (y.value < 75 && e.velocityY < 250) {
+      if (y.value < 75 && e.velocityY < 500) {
         y.value = withTiming(0);
       }
     },

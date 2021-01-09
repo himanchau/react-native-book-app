@@ -49,9 +49,9 @@ const Book = React.memo(({ book, bookList }) => {
     },
     imgBox: {
       borderRadius: 10,
-      shadowRadius: 5,
-      shadowOpacity: 0.5,
-      shadowOffset: { width: 5, height: 5 },
+      shadowRadius: 3,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 3, height: 3 },
     },
     bookImg: {
       width: BOOKW,

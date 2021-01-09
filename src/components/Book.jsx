@@ -3,7 +3,8 @@ import {
   Pressable, View, Image, StyleSheet,
 } from 'react-native';
 import Animated, {
-  useDerivedValue, withTiming, interpolate, Extrapolate, useAnimatedStyle, useSharedValue,
+  withTiming, interpolate, Extrapolate, withDelay,
+  useDerivedValue, useAnimatedStyle, useSharedValue,
 } from 'react-native-reanimated';
 import { useFocusEffect, useTheme, useNavigation } from '@react-navigation/native';
 import { SharedElement } from 'react-navigation-shared-element';
@@ -20,6 +21,7 @@ function Book({ book, scrollX, index }) {
   const position = useDerivedValue(() => (index + 0.00001) * (BOOKW + margin) - scrollX.value);
   const inputRange = [-BOOKW, 0, BOOKW, BOOKW * 3];
   const opacity = useSharedValue(1);
+  const loaded = useSharedValue(0);
 
   // Show book when focused
   useFocusEffect(() => {
@@ -27,6 +29,10 @@ function Book({ book, scrollX, index }) {
       opacity.value = withTiming(1);
     }
   });
+
+  const onLayout = () => {
+    loaded.value = 1;
+  };
 
   // View book details
   const bookDetails = () => {
@@ -38,12 +44,16 @@ function Book({ book, scrollX, index }) {
   // Animated styles
   const anims = {
     book: useAnimatedStyle(() => ({
-      opacity: opacity.value,
+      opacity: withDelay(index * 150, withTiming(loaded.value)),
       transform: [
         { perspective: 800 },
         { scale: interpolate(position.value, inputRange, [0.9, 1, 1, 1], Extrapolate.CLAMP) },
         { rotateY: `${interpolate(position.value, inputRange, [60, 0, 0, 0], Extrapolate.CLAMP)}deg` },
-        { translateX: interpolate(position.value, inputRange, [BOOKW / 4, 0, 0, 0], 'clamp') },
+        {
+          translateX: scrollX.value
+            ? interpolate(position.value, inputRange, [BOOKW / 4, 0, 0, 0], 'clamp')
+            : withDelay(index * 150, withTiming(interpolate(loaded.value, [0, 1], [BOOKW, 0], 'clamp'))),
+        },
       ],
     })),
   };
@@ -53,9 +63,9 @@ function Book({ book, scrollX, index }) {
     imgBox: {
       marginRight: margin,
       borderRadius: 10,
-      shadowRadius: 5,
-      shadowOpacity: 0.5,
-      shadowOffset: { width: 5, height: 5 },
+      shadowRadius: 3,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 3, height: 3 },
     },
     bookImg: {
       width: BOOKW,
@@ -70,7 +80,7 @@ function Book({ book, scrollX, index }) {
 
   return (
     <Pressable onPress={bookDetails}>
-      <Animated.View style={anims.book}>
+      <Animated.View onLayout={onLayout} style={anims.book}>
         <SharedElement id={book.bookId}>
           <View style={styles.imgBox}>
             <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
