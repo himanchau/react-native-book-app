@@ -58,7 +58,7 @@ function BookList({ navigation }) {
   // Go to search screen
   const searchBooks = () => {
     Haptics.selectionAsync();
-    navigation.navigate('BookSearch', { bookList });
+    navigation.push('BookSearch', { bookList });
   };
 
   // Reload books when focused

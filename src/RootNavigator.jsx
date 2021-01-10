@@ -30,7 +30,7 @@ function RootNavigator() {
       <BookStack.Screen
         name="BookDetails"
         component={BookDetailsScreen}
-        sharedElements={(route) => [route.params?.book.bookId]}
+        sharedElements={(route, otherRoute) => (['BookList', 'BookSearch', 'BookDetails'].includes(otherRoute.name) ? [route.params.book.bookId] : [])}
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,
@@ -39,7 +39,7 @@ function RootNavigator() {
       <BookStack.Screen
         name="BookSearch"
         component={BookSearchScreen}
-        sharedElements={() => ['search']}
+        sharedElements={(_, otherRoute) => (otherRoute.name === 'BookList' ? ['search'] : [])}
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,

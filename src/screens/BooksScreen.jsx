@@ -50,7 +50,7 @@ function Books({ navigation }) {
       <Text center style={styles.subTitle}>
         Its never been easier to organize your reading list in one place.
       </Text>
-      <Button onPress={() => navigation.navigate('BookList')}>
+      <Button onPress={() => navigation.push('BookList')}>
         Get Started
       </Button>
     </ScrollView>

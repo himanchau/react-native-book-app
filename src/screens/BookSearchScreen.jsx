@@ -38,7 +38,7 @@ const Book = React.memo(({ book, bookList }) => {
   // View book details
   const bookDetails = () => {
     Haptics.selectionAsync();
-    navigation.navigate('BookDetails', { book });
+    navigation.push('BookDetails', { book });
   };
 
   // Styles
@@ -97,7 +97,7 @@ const Book = React.memo(({ book, bookList }) => {
 
 // Default screen
 function SearchScreen({ navigation, route }) {
-  const bookList = route.params?.bookList;
+  const { bookList } = route.params;
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
   const scrollY = useSharedValue(0);
@@ -115,7 +115,7 @@ function SearchScreen({ navigation, route }) {
   const goBack = () => {
     loaded.value = withTiming(0);
     Haptics.selectionAsync();
-    navigation.navigate('BookList');
+    navigation.goBack();
   };
 
   // Search

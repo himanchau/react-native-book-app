@@ -1,35 +1,52 @@
 /* eslint-disable no-param-reassign */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Image, StyleSheet, Alert, StatusBar,
+  View, Image, Alert, StatusBar, Pressable,
 } from 'react-native';
 import Animated, {
   interpolate, withTiming, runOnJS,
   useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { PanGestureHandler, ScrollView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useIsFocused, useTheme } from '@react-navigation/native';
+import { useTheme, useIsFocused } from '@react-navigation/native';
+import { Modalize } from 'react-native-modalize';
 import { AntDesign } from '@expo/vector-icons';
 import { parse } from 'fast-xml-parser';
 import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 
 import Text from '../components/Text';
+import List from '../components/BookList';
 import Button from '../components/Button';
 import BookHeader from '../components/BookHeader';
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
+// Get icon for status button
+const getIcon = (stat) => {
+  switch (stat) {
+    case 'Reading':
+      return 'rocket1';
+    case 'Completed':
+      return 'Trophy';
+    case 'Wishlist':
+      return 'book';
+    default:
+      return 'plus';
+  }
+};
+
 // Default screen
 function BookDetails({ navigation, route }) {
-  const book = route.params?.book;
+  const { book } = route.params;
+  const [related, setRelated] = useState([]);
   const [bookList, setBookList] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
   const [enabled, setEnabled] = useState(true);
-  const ref = useRef();
+  const panRef = useRef();
+  const sheetRef = useRef();
   const loaded = useSharedValue(0);
   const y = useSharedValue(0);
   const closing = useSharedValue(0);
@@ -58,40 +75,36 @@ function BookDetails({ navigation, route }) {
     }
   }, [bookList]);
 
-  // Add book to list
-  const addBook = () => {
+  // Open book lists sheet
+  const openSheet = () => {
     Haptics.selectionAsync();
-    let status = 'Reading';
+    sheetRef.current?.open();
+  };
 
-    // Find item and update status if needed
+  // Close book list sheet
+  const closeSheet = () => {
+    Haptics.selectionAsync();
+    sheetRef.current?.close();
+  };
+
+  // Add book to list
+  const addBook = (list) => {
+    // Find book in list and update
     const item = bookList.find((b) => b.bookId === book.bookId);
     if (item) {
-      const index = bookList.indexOf(item);
-      switch (item.status) {
-        case 'Reading':
-          status = 'Completed';
-          break;
-        case 'Completed':
-          status = 'Wishlist';
-          break;
-        case 'Wishlist':
-          status = 'Remove';
-          break;
-        default:
-          status = 'Reading';
-          break;
-      }
       setBookList((arr) => {
-        arr.splice(index, 1);
-        if (status === 'Remove') {
+        arr.splice(bookList.indexOf(item), 1);
+        if (list === 'Remove') {
           return [...arr];
         }
-        return [{ ...item, status }, ...arr];
+        return [{ ...item, status: list }, ...arr];
       });
     } else {
-      // Add to the list with reading status
-      setBookList((arr) => [{ ...book, status }, ...arr]);
+      // Add to list with proper status
+      setBookList((arr) => [{ ...book, status: list }, ...arr]);
     }
+
+    closeSheet();
   };
 
   // Scroll handler
@@ -131,6 +144,19 @@ function BookDetails({ navigation, route }) {
   // Load book details
   useEffect(() => {
     loadData();
+
+    // Related Books
+    axios.get(`https://www.goodreads.com/book/auto_complete?format=json&q=${book.author.name}`)
+      .then((resp) => {
+        const bks = resp.data.filter((bk, i, arr) => {
+          arr[i].imageUrl = bk.imageUrl.replace(/_..../, '_SY475_');
+          return (book.bookId !== bk.bookId);
+        });
+        setRelated(bks);
+      })
+      .catch((error) => {
+        Alert.alert('Failed to get books', error);
+      });
 
     // Book details
     axios.get(`https://www.goodreads.com/book/show/${book.bookId}.xml?key=Bi8vh08utrMY3HAqM9rkWA`)
@@ -180,7 +206,7 @@ function BookDetails({ navigation, route }) {
   };
 
   // Styles
-  const styles = StyleSheet.create({
+  const styles = {
     closeIcon: {
       zIndex: 10,
       top: margin,
@@ -190,13 +216,13 @@ function BookDetails({ navigation, route }) {
       position: 'absolute',
     },
     scrollContainer: {
-      padding: margin,
       paddingTop: HEADER,
-      paddingBottom: status + margin + 50,
+      paddingBottom: status + 50,
     },
     detailsBox: {
       borderRadius: 10,
       flexDirection: 'row',
+      marginHorizontal: margin,
       backgroundColor: colors.card,
     },
     detailsRow: {
@@ -217,6 +243,7 @@ function BookDetails({ navigation, route }) {
       marginTop: margin,
       flexDirection: 'row',
       alignItems: 'center',
+      marginHorizontal: margin,
     },
     authorImage: {
       width: 65,
@@ -230,81 +257,140 @@ function BookDetails({ navigation, route }) {
       width: width - 120,
     },
     aboutBook: {
+      margin,
       lineHeight: 25,
-      marginTop: margin,
+      textAlign: 'justify',
     },
-    footer: {
-      left: 0,
-      right: 0,
-      bottom: 0,
+    addButton: {
+      width: 60,
+      height: 60,
+      right: margin,
+      bottom: margin,
+      borderRadius: 60,
       position: 'absolute',
-      paddingHorizontal: margin,
+      backgroundColor: colors.button,
     },
-  });
+    addIcon: {
+      top: 3,
+    },
+    modal: {
+      padding: margin,
+      borderRadius: 12,
+      paddingBottom: status,
+      backgroundColor: colors.card,
+    },
+    flexRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    marginB: {
+      marginBottom: margin,
+    },
+    iconBtn: {
+      padding: 0,
+      backgroundColor: colors.card,
+    },
+    iconLeft: {
+      fontSize: 21,
+      color: colors.text,
+      marginRight: margin,
+    },
+  };
 
   // Find book in list
   const item = bookList.find((b) => b.bookId === book.bookId);
 
   // Render book details
   return (
-    <PanGestureHandler
-      ref={ref}
-      failOffsetY={-5}
-      activeOffsetY={5}
-      enabled={enabled}
-      onGestureEvent={gestureHandler}
-    >
-      <Animated.View style={anims.screen}>
-        <StatusBar hidden={useIsFocused()} />
-        <BookHeader scrollY={scrollY} y={y} book={book} navigation={navigation} />
-        <AntDesign size={27} name="close" onPress={() => navigation.goBack()} style={styles.closeIcon} />
+    <>
+      <PanGestureHandler
+        ref={panRef}
+        failOffsetY={-5}
+        activeOffsetY={5}
+        enabled={enabled}
+        onGestureEvent={gestureHandler}
+      >
+        <Animated.View style={anims.screen}>
+          <StatusBar hidden={useIsFocused()} animated />
+          <BookHeader scrollY={scrollY} y={y} book={book} navigation={navigation} />
+          <AntDesign size={27} name="close" onPress={() => navigation.pop()} style={styles.closeIcon} />
 
-        <Animated.View style={anims.scrollView}>
-          <AnimatedScrollView
-            waitFor={enabled ? ref : undefined}
-            onScroll={scrollHandler}
-            scrollEventThrottle={8}
-            contentContainerStyle={styles.scrollContainer}
-          >
-            <View style={styles.detailsBox}>
-              <View style={styles.detailsRow}>
-                <Text center size={13}>RATING</Text>
-                <Text bold style={styles.subDetails}>{book.avgRating}</Text>
-              </View>
-              <View style={[styles.detailsRow, styles.detailsRowBorder]}>
-                <Text center size={13}>PAGES</Text>
-                <Text bold style={styles.subDetails}>{book.numPages}</Text>
-              </View>
-              <View style={styles.detailsRow}>
-                <Text center size={13}>STATUS</Text>
-                <Text bold color={colors.primary} style={styles.subDetails}>{item ? item.status : '-'}</Text>
-              </View>
-            </View>
-
-            <Animated.View style={anims.details}>
-              <View style={styles.authorBox}>
-                <Image source={{ uri: author?.image_url }} style={styles.authorImage} />
-                <View>
-                  <Text bold size={17}>{author?.name || '...'}</Text>
-                  <Text numberOfLines={2} style={styles.authorDetails}>
-                    {author?.about.replace(/(<([^>]+)>)/ig, '')}
-                  </Text>
+          <Animated.View style={anims.scrollView}>
+            <AnimatedScrollView
+              waitFor={enabled ? panRef : undefined}
+              onScroll={scrollHandler}
+              scrollEventThrottle={8}
+              contentContainerStyle={styles.scrollContainer}
+            >
+              <View style={styles.detailsBox}>
+                <View style={styles.detailsRow}>
+                  <Text center size={13}>RATING</Text>
+                  <Text bold style={styles.subDetails}>{book.avgRating}</Text>
+                </View>
+                <View style={[styles.detailsRow, styles.detailsRowBorder]}>
+                  <Text center size={13}>PAGES</Text>
+                  <Text bold style={styles.subDetails}>{book.numPages}</Text>
+                </View>
+                <View style={styles.detailsRow}>
+                  <Text center size={13}>STATUS</Text>
+                  <Text bold color={colors.primary} style={styles.subDetails}>{item ? item.status : '-'}</Text>
                 </View>
               </View>
-              <Text size={16} style={styles.aboutBook}>
-                {fullBook?.description.replace(/(<([^>]+)>)/ig, '')}
-              </Text>
-            </Animated.View>
-          </AnimatedScrollView>
 
-          <SafeAreaView edges={['bottom']} style={styles.footer}>
-            <Button onPress={addBook}>
-              {item ? item.status : 'Add to List'}
+              <Animated.View style={anims.details}>
+                <View style={styles.authorBox}>
+                  <Image source={{ uri: author?.image_url }} style={styles.authorImage} />
+                  <View>
+                    <Text bold size={17}>{author?.name || '...'}</Text>
+                    <Text numberOfLines={2} style={styles.authorDetails}>
+                      {author?.about.replace(/(<([^>]+)>)/ig, '')}
+                    </Text>
+                  </View>
+                </View>
+                <Text size={16} numberOfLines={10} style={styles.aboutBook}>
+                  {fullBook?.description.replace(/(<([^>]+)>)/ig, ' ')}
+                </Text>
+                <List books={related} title="Related Books" navigation={navigation} />
+              </Animated.View>
+            </AnimatedScrollView>
+
+            <Button onPress={openSheet} style={styles.addButton}>
+              <AntDesign size={21} name={getIcon(item?.status)} style={styles.addIcon} />
             </Button>
-          </SafeAreaView>
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
-    </PanGestureHandler>
+      </PanGestureHandler>
+
+      <Modalize ref={sheetRef} threshold={50} adjustToContentHeight>
+        <View style={styles.modal}>
+          <View style={[styles.flexRow, styles.marginB]}>
+            <Text bold size={20}>Add To</Text>
+            <Text bold onPress={closeSheet}>Done</Text>
+          </View>
+          <Pressable onPress={() => addBook('Reading')} style={[styles.flexRow, styles.marginB]}>
+            <AntDesign.Button name="rocket1" style={styles.iconBtn} iconStyle={styles.iconLeft}>
+              <Text size={17}>Reading</Text>
+            </AntDesign.Button>
+            <AntDesign size={21} color={colors.text} name={item?.status === 'Reading' ? 'check' : ''} />
+          </Pressable>
+          <Pressable onPress={() => addBook('Completed')} style={[styles.flexRow, styles.marginB]}>
+            <AntDesign.Button name="Trophy" style={styles.iconBtn} iconStyle={styles.iconLeft}>
+              <Text size={17}>Completed</Text>
+            </AntDesign.Button>
+            <AntDesign size={21} color={colors.text} name={item?.status === 'Completed' ? 'check' : ''} />
+          </Pressable>
+          <Pressable onPress={() => addBook('Wishlist')} style={[styles.flexRow, styles.marginB]}>
+            <AntDesign.Button name="book" style={styles.iconBtn} iconStyle={styles.iconLeft}>
+              <Text size={17}>Wishlist</Text>
+            </AntDesign.Button>
+            <AntDesign size={21} color={colors.text} name={item?.status === 'Wishlist' ? 'check' : ''} />
+          </Pressable>
+          <Pressable onPress={() => addBook('Remove')}>
+            <Text center size={16} color="#ff3b30">Remove</Text>
+          </Pressable>
+        </View>
+      </Modalize>
+    </>
   );
 }
 

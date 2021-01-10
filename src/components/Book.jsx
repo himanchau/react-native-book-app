@@ -38,7 +38,7 @@ function Book({ book, scrollX, index }) {
   const bookDetails = () => {
     Haptics.selectionAsync();
     opacity.value = withTiming(0);
-    navigation.navigate('BookDetails', { book });
+    navigation.push('BookDetails', { book });
   };
 
   // Animated styles
