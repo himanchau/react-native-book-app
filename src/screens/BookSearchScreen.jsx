@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, TextInput, Alert, Image, StyleSheet, Pressable,
 } from 'react-native';
@@ -102,8 +102,9 @@ function SearchScreen({ navigation, route }) {
   const [books, setBooks] = useState([]);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
+  const search = useRef();
   const {
-    colors, width, height, margin, status,
+    colors, width, height, margin, status, navbar,
   } = useTheme();
 
   // Scroll Handler
@@ -137,7 +138,10 @@ function SearchScreen({ navigation, route }) {
 
   // Loaded animation fade in
   useEffect(() => {
-    loaded.value = withTiming(1, { duration: 600 });
+    setTimeout(() => {
+      search.current?.focus();
+      loaded.value = withTiming(1);
+    }, 350);
   }, []);
 
   // Animated styles
@@ -147,17 +151,19 @@ function SearchScreen({ navigation, route }) {
       alignItems: 'center',
       flexDirection: 'row',
       paddingTop: status,
-      paddingBottom: margin / 2,
-      paddingHorizontal: margin,
+      padding: margin / 2,
       justifyContent: 'space-between',
       backgroundColor: colors.background,
-      opacity: interpolate(loaded.value, [0.75, 1], [0, 1], Extrapolate.CLAMP),
+      opacity: interpolate(loaded.value, [0, 1], [0, 1], Extrapolate.CLAMP),
+      transform: [
+        { translateY: interpolate(loaded.value, [0, 1], [-navbar, 0], Extrapolate.CLAMP) },
+      ],
       shadowOpacity: interpolate(scrollY.value, [0, 20], [0, 0.75], Extrapolate.CLAMP),
     })),
     scrollView: useAnimatedStyle(() => ({
-      opacity: interpolate(loaded.value, [0.5, 1], [0, 1], Extrapolate.CLAMP),
+      opacity: interpolate(loaded.value, [0, 1], [0, 1], Extrapolate.CLAMP),
       transform: [
-        { translateY: interpolate(loaded.value, [0, 0.75], [50, 0], Extrapolate.CLAMP) },
+        { translateY: interpolate(loaded.value, [0, 1], [100, 0], Extrapolate.CLAMP) },
       ],
     })),
   };
@@ -169,12 +175,13 @@ function SearchScreen({ navigation, route }) {
       backgroundColor: colors.background,
     },
     sharedElement: {
-      top: -20,
-      height: 40,
-      borderRadius: 40,
+      height,
+      width: height,
+      bottom: -height,
+      right: -width / 2,
       position: 'absolute',
-      width: width - margin * 2 - 70,
-      backgroundColor: colors.card,
+      borderRadius: height,
+      backgroundColor: colors.background,
     },
     searchInput: {
       flex: 1,
@@ -221,12 +228,12 @@ function SearchScreen({ navigation, route }) {
   // Render search page
   return (
     <View style={styles.screen}>
+      <SharedElement id="search">
+        <View style={styles.sharedElement} />
+      </SharedElement>
       <Animated.View style={anims.search}>
-        <SharedElement id="search">
-          <View style={styles.sharedElement} />
-        </SharedElement>
         <TextInput
-          autoFocus
+          ref={search}
           value={query}
           autoCorrect={false}
           onChangeText={(text) => setQuery(text)}

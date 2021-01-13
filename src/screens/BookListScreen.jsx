@@ -157,9 +157,7 @@ function BookList({ navigation }) {
       backgroundColor: colors.button,
     },
     sharedElement: {
-      opacity: 0.5,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderWidth: 0,
     },
     plusIcon: {
       top: 3,
