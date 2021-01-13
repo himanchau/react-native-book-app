@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  Pressable, View, Image, StyleSheet,
+  Pressable, View, Image, StyleSheet, LayoutAnimation,
 } from 'react-native';
 import Animated, {
-  withTiming, interpolate, Extrapolate, withDelay,
+  withTiming, interpolate, Extrapolate,
   useDerivedValue, useAnimatedStyle, useSharedValue,
 } from 'react-native-reanimated';
-import { useFocusEffect, useTheme, useNavigation } from '@react-navigation/native';
+import { useTheme, useNavigation } from '@react-navigation/native';
 import { SharedElement } from 'react-navigation-shared-element';
 import * as Haptics from 'expo-haptics';
 
@@ -20,31 +20,23 @@ function Book({ book, scrollX, index }) {
   const BOOKH = BOOKW * 1.5;
   const position = useDerivedValue(() => (index + 0.00001) * (BOOKW + margin) - scrollX.value);
   const inputRange = [-BOOKW, 0, BOOKW, BOOKW * 3];
-  const opacity = useSharedValue(1);
   const loaded = useSharedValue(0);
 
-  // Show book when focused
-  useFocusEffect(() => {
-    if (navigation.isFocused()) {
-      opacity.value = withTiming(1);
-    }
-  });
-
-  const onLayout = () => {
-    loaded.value = 1;
-  };
+  useEffect(() => {
+    LayoutAnimation.easeInEaseOut();
+    loaded.value = withTiming(1);
+  }, []);
 
   // View book details
   const bookDetails = () => {
     Haptics.selectionAsync();
-    opacity.value = withTiming(0);
     navigation.push('BookDetails', { book });
   };
 
   // Animated styles
   const anims = {
     book: useAnimatedStyle(() => ({
-      opacity: withDelay(index * 150, withTiming(loaded.value)),
+      opacity: loaded.value,
       transform: [
         { perspective: 800 },
         { scale: interpolate(position.value, inputRange, [0.9, 1, 1, 1], Extrapolate.CLAMP) },
@@ -52,7 +44,7 @@ function Book({ book, scrollX, index }) {
         {
           translateX: scrollX.value
             ? interpolate(position.value, inputRange, [BOOKW / 4, 0, 0, 0], 'clamp')
-            : withDelay(index * 150, withTiming(interpolate(loaded.value, [0, 1], [BOOKW, 0], 'clamp'))),
+            : interpolate(loaded.value, [0, 1], [index * BOOKW, 0], 'clamp'),
         },
       ],
     })),
@@ -80,7 +72,7 @@ function Book({ book, scrollX, index }) {
 
   return (
     <Pressable onPress={bookDetails}>
-      <Animated.View onLayout={onLayout} style={anims.book}>
+      <Animated.View style={anims.book}>
         <SharedElement id={book.bookId}>
           <View style={styles.imgBox}>
             <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />

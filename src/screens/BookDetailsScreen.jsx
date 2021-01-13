@@ -75,6 +75,12 @@ function BookDetails({ navigation, route }) {
     }
   }, [bookList]);
 
+  // Go back to previous screen
+  const goBack = () => {
+    navigation.goBack();
+    Haptics.selectionAsync();
+  };
+
   // Open book lists sheet
   const openSheet = () => {
     Haptics.selectionAsync();
@@ -83,7 +89,7 @@ function BookDetails({ navigation, route }) {
 
   // Close book list sheet
   const closeSheet = () => {
-    Haptics.selectionAsync();
+    Haptics.notificationAsync('success');
     sheetRef.current?.close();
   };
 
@@ -130,8 +136,7 @@ function BookDetails({ navigation, route }) {
       // See if closing screen
       if ((y.value >= 75 || e.velocityY >= 500) && !closing.value) {
         closing.value = 1;
-        runOnJS(navigation.goBack)();
-        runOnJS(Haptics.selectionAsync)();
+        runOnJS(goBack)();
       }
     },
     onEnd: (e) => {
@@ -313,7 +318,7 @@ function BookDetails({ navigation, route }) {
         <Animated.View style={anims.screen}>
           <StatusBar hidden={useIsFocused()} animated />
           <BookHeader scrollY={scrollY} y={y} book={book} navigation={navigation} />
-          <AntDesign size={27} name="close" onPress={() => navigation.pop()} style={styles.closeIcon} />
+          <AntDesign size={27} name="close" onPress={goBack} style={styles.closeIcon} />
 
           <Animated.View style={anims.scrollView}>
             <AnimatedScrollView
@@ -331,10 +336,10 @@ function BookDetails({ navigation, route }) {
                   <Text center size={13}>PAGES</Text>
                   <Text bold style={styles.subDetails}>{book.numPages}</Text>
                 </View>
-                <View style={styles.detailsRow}>
+                <Pressable onPress={openSheet} style={styles.detailsRow}>
                   <Text center size={13}>STATUS</Text>
                   <Text bold color={colors.primary} style={styles.subDetails}>{item ? item.status : '-'}</Text>
-                </View>
+                </Pressable>
               </View>
 
               <Animated.View style={anims.details}>
@@ -368,19 +373,19 @@ function BookDetails({ navigation, route }) {
             <Text bold onPress={closeSheet}>Done</Text>
           </View>
           <Pressable onPress={() => addBook('Reading')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button name="rocket1" style={styles.iconBtn} iconStyle={styles.iconLeft}>
+            <AntDesign.Button onPress={() => addBook('Reading')} name="rocket1" style={styles.iconBtn} iconStyle={styles.iconLeft}>
               <Text size={17}>Reading</Text>
             </AntDesign.Button>
             <AntDesign size={21} color={colors.text} name={item?.status === 'Reading' ? 'check' : ''} />
           </Pressable>
           <Pressable onPress={() => addBook('Completed')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button name="Trophy" style={styles.iconBtn} iconStyle={styles.iconLeft}>
+            <AntDesign.Button onPress={() => addBook('Completed')} name="Trophy" style={styles.iconBtn} iconStyle={styles.iconLeft}>
               <Text size={17}>Completed</Text>
             </AntDesign.Button>
             <AntDesign size={21} color={colors.text} name={item?.status === 'Completed' ? 'check' : ''} />
           </Pressable>
           <Pressable onPress={() => addBook('Wishlist')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button name="book" style={styles.iconBtn} iconStyle={styles.iconLeft}>
+            <AntDesign.Button onPress={() => addBook('Wishlist')} name="book" style={styles.iconBtn} iconStyle={styles.iconLeft}>
               <Text size={17}>Wishlist</Text>
             </AntDesign.Button>
             <AntDesign size={21} color={colors.text} name={item?.status === 'Wishlist' ? 'check' : ''} />

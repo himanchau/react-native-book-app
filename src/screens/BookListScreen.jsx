@@ -39,7 +39,7 @@ function BookList({ navigation }) {
   const [wishlist, setWishlist] = useState([]);
   const [bookList, setBookList] = useState([]);
   const scrollY = useSharedValue(0);
-  const timer = useSharedValue(0);
+  const loaded = useSharedValue(0);
 
   // Scrollview handler
   const scrollHandler = useAnimatedScrollHandler({
@@ -64,9 +64,11 @@ function BookList({ navigation }) {
   // Reload books when focused
   useFocusEffect(
     React.useCallback(() => {
-      loadData();
-      if (timer.value === 0) {
-        timer.value = 1;
+      if (!loaded.value) {
+        loadData();
+        loaded.value = 1;
+      } else {
+        setTimeout(loadData, 450);
       }
     }, []),
   );
@@ -120,7 +122,7 @@ function BookList({ navigation }) {
     lottie: useAnimatedProps(() => ({
       progress: scrollY.value
         ? interpolate(scrollY.value, [-100, 0, 250], [0.4, 0.5, 0.6], 'clamp')
-        : withTiming(interpolate(timer.value, [0, 1], [0.1, 0.5], 'clamp'), { duration: 2500 }),
+        : withTiming(interpolate(loaded.value, [0, 1], [0.1, 0.5], 'clamp'), { duration: 2500 }),
     })),
     text: useAnimatedStyle(() => ({
       top: 10,
