@@ -5,22 +5,23 @@ import { useWindowDimensions } from 'react-native';
 export default function getTheme(scheme) {
   const { width, height } = useWindowDimensions();
   const dark = scheme === 'dark';
+  const normalize = (size, max) => Math.min(size * (width / 375), max);
 
   return {
     dark,
     width,
     height,
-    margin: 20,
+    margin: normalize(20, 35),
     colors: {
       primary: '#16a085',
-      text: dark ? '#f6f5f0' : '#100f0a',
+      text: dark ? '#f2f2f2' : '#1a1a1a',
       card: dark ? '#000000' : '#ffffff',
-      background: dark ? '#100f0a' : '#f6f5f0',
-      border: dark ? '#f6f5f0dd' : '#100f0add',
+      background: dark ? '#1a1a1a' : '#f2f2f2',
+      border: dark ? '#f2f2f2dd' : '#1a1a1add',
       button: dark ? '#100f0add' : '#f6f5f0dd',
     },
     status: Constants.statusBarHeight,
     navbar: Constants.statusBarHeight + 44,
-    normalize: (size, max) => Math.min(size * (width / 375), max),
+    normalize,
   };
 }

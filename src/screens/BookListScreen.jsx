@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import Animated, {
-  interpolate, Extrapolate, withTiming,
-  useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
+  interpolate, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
 } from 'react-native-reanimated';
 import { useTheme, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,10 +11,9 @@ import LottieView from 'lottie-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Text from '../components/Text';
-import Button from '../components/Button';
 import List from '../components/BookList';
 
-const studies = require('../anims/studies.json');
+const studies = require('../anims/landscape.json');
 
 const LottieViewAnimated = Animated.createAnimatedComponent(LottieView);
 
@@ -33,7 +31,10 @@ const getGreeting = () => {
 
 // Default screen
 function BookList({ navigation }) {
-  const { colors, margin, navbar } = useTheme();
+  const {
+    dark, width, colors, margin, navbar, normalize,
+  } = useTheme();
+  const HEADER = normalize(300, 400);
   const [reading, setReading] = useState([]);
   const [completed, setCompleted] = useState([]);
   const [wishlist, setWishlist] = useState([]);
@@ -95,88 +96,108 @@ function BookList({ navigation }) {
     }
   }, [bookList]);
 
-  // Animated Styles
-  const anims = {
+  // Styles
+  const styles = {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
     header: useAnimatedStyle(() => ({
       top: 0,
       left: 0,
       right: 0,
       zIndex: 10,
-      height: 350,
-      padding: margin,
+      height: HEADER,
       paddingTop: navbar,
-      shadowRadius: 2,
+      shadowRadius: 4,
       position: 'absolute',
       alignItems: 'center',
       justifyContent: 'flex-end',
       shadowOffset: { height: 2, width: 0 },
       backgroundColor: colors.background,
-      shadowOpacity: interpolate(scrollY.value, [0, 250, 260], [0, 0, 0.20], Extrapolate.CLAMP),
+      shadowOpacity: interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp'),
       transform: [
-        { translateY: interpolate(scrollY.value, [0, 350 - navbar], [0, -350 + navbar], 'clamp') },
+        { translateY: interpolate(scrollY.value, [0, HEADER - navbar], [0, -HEADER + navbar], 'clamp') },
       ],
     })),
     logo: useAnimatedStyle(() => ({
-      opacity: interpolate(scrollY.value, [0, 250], [1, 0], Extrapolate.CLAMP),
-    })),
-    lottie: useAnimatedProps(() => ({
-      progress: scrollY.value
-        ? interpolate(scrollY.value, [-100, 0, 250], [0.4, 0.5, 0.6], 'clamp')
-        : withTiming(interpolate(loaded.value, [0, 1], [0.1, 0.5], 'clamp'), { duration: 2500 }),
-    })),
-    text: useAnimatedStyle(() => ({
-      top: 10,
+      opacity: interpolate(scrollY.value, [0, HEADER - 100], [1, 0], 'clamp'),
       transform: [
-        { scale: interpolate(scrollY.value, [0, 250, 260], [1, 1, 0.90], Extrapolate.CLAMP) },
-        { translateY: interpolate(scrollY.value, [-100, 0], [10, 0], 'clamp') },
+        { translateY: interpolate(scrollY.value, [-200, 0], [50, 0], 'clamp') },
       ],
     })),
-  };
-
-  // Styles
-  const styles = StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
     lottie: {
-      bottom: 2,
-      height: '109%',
+      alignSelf: 'center',
+      height: '110%',
+      marginLeft: 10,
+      opacity: dark ? 0.8 : 1,
+    },
+    lottieProps: useAnimatedProps(() => ({
+      speed: 0.5,
+      autoPlay: true,
+      // progress: scrollY.value
+      //   ? interpolate(scrollY.value, [-200, 0, 200], [0, 0.5, 1], 'clamp')
+      //   : withTiming(1, { duration: 5000 }),
+    })),
+    welcome: useAnimatedStyle(() => ({
+      transform: [
+        { translateY: interpolate(scrollY.value, [-200, 0], [200, 0], 'clamp') },
+      ],
+    })),
+    welcomeText: useAnimatedStyle(() => ({
+      transform: [
+        { scale: interpolate(scrollY.value, [0, HEADER - 110, HEADER - 90], [1, 1, 0.85], 'clamp') },
+        { translateY: interpolate(scrollY.value, [0, HEADER - 110, HEADER - 90], [0, 0, 10], 'clamp') },
+      ],
+    })),
+    searchInput: {
+      height: 50,
+      marginBottom: -25,
+      marginTop: margin / 2,
+      width: width - margin * 2,
+      borderWidth: 1,
+      borderRadius: 25,
+      paddingHorizontal: 20,
+      justifyContent: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.background,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchText: {
+      opacity: 0.3,
     },
     scrollView: {
-      paddingTop: 350,
-      borderRadius: 30,
+      paddingTop: HEADER,
     },
-    searchButton: {
-      width: 60,
-      height: 60,
-      right: margin,
-      bottom: margin,
-      borderRadius: 60,
-      position: 'absolute',
-      backgroundColor: colors.button,
-    },
-    sharedElement: {
-      borderWidth: 0,
-    },
-    plusIcon: {
-      top: 3,
-      color: colors.text,
-    },
-  });
+  };
 
   // Render all the lists
   return (
     <View style={styles.screen}>
-      <Animated.View style={anims.header}>
-        <Animated.View style={anims.logo}>
-          <LottieViewAnimated source={studies} style={styles.lottie} animatedProps={anims.lottie} />
+      <Animated.View style={styles.header}>
+        <Animated.View style={styles.logo}>
+          <LottieViewAnimated
+            source={studies}
+            style={styles.lottie}
+            animatedProps={styles.lottieProps}
+          />
         </Animated.View>
-        <Animated.View style={anims.text}>
-          <Text size={21}>
-            {`${getGreeting()}, `}
-            <Text size={21} bold>Himanshu</Text>
+        <Animated.View style={styles.welcome}>
+          <Text animated style={styles.welcomeText} center size={20}>
+            {getGreeting()}
           </Text>
+          <SharedElement id="search">
+            <Pressable onPress={searchBooks} style={styles.searchInput}>
+              <Text size={15} style={styles.searchText}>
+                <View style={styles.searchIcon}>
+                  <AntDesign color={colors.text} name="search1" size={15} />
+                </View>
+                Find your next book...
+              </Text>
+            </Pressable>
+          </SharedElement>
         </Animated.View>
       </Animated.View>
 
@@ -189,13 +210,6 @@ function BookList({ navigation }) {
         <List books={completed} title="Completed" navigation={navigation} />
         <List books={wishlist} title="Wishlist" navigation={navigation} />
       </Animated.ScrollView>
-
-      <SharedElement id="search">
-        <View style={[styles.searchButton, styles.sharedElement]} />
-      </SharedElement>
-      <Button onPress={searchBooks} style={styles.searchButton}>
-        <AntDesign size={21} name="search1" style={styles.plusIcon} />
-      </Button>
     </View>
   );
 }

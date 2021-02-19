@@ -39,7 +39,10 @@ function RootNavigator() {
       <BookStack.Screen
         name="BookSearch"
         component={BookSearchScreen}
-        sharedElements={(_, otherRoute) => (otherRoute.name === 'BookList' ? ['search'] : [])}
+        sharedElements={(_, otherRoute) => (otherRoute.name === 'BookList' ? [{
+          id: 'search',
+          animation: 'fade',
+        }] : [])}
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,

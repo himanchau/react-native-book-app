@@ -1,5 +1,4 @@
-/* eslint-disable no-nested-ternary */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, TextInput, Alert, Image, StyleSheet, Pressable,
 } from 'react-native';
@@ -7,93 +6,14 @@ import Animated, {
   interpolate, Extrapolate, withTiming, useSharedValue, useAnimatedScrollHandler, useAnimatedStyle,
 } from 'react-native-reanimated';
 import { SharedElement } from 'react-navigation-shared-element';
-import { useNavigation, useTheme } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
+import { useTheme } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 
 import Text from '../components/Text';
+import Book from '../components/SearchBook';
 
 const bookImg = require('../images/books.png');
-
-// Star rating
-const Rating = React.memo(({ rating }) => (
-  <View style={{ width: 90, flexDirection: 'row', justifyContent: 'space-between' }}>
-    <FontAwesome size={16} name={rating < 0.5 ? 'star-o' : rating < 0.5 ? 'star-half-o' : 'star'} color="#f39c12" />
-    <FontAwesome size={16} name={rating < 1.5 ? 'star-o' : rating < 1.5 ? 'star-half-o' : 'star'} color="#f39c12" />
-    <FontAwesome size={16} name={rating < 2.5 ? 'star-o' : rating < 2.5 ? 'star-half-o' : 'star'} color="#f39c12" />
-    <FontAwesome size={16} name={rating < 3.5 ? 'star-o' : rating < 3.5 ? 'star-half-o' : 'star'} color="#f39c12" />
-    <FontAwesome size={16} name={rating < 4.5 ? 'star-o' : rating < 4.5 ? 'star-half-o' : 'star'} color="#f39c12" />
-  </View>
-));
-
-// Render book
-const Book = React.memo(({ book, bookList }) => {
-  const { margin, colors, normalize } = useTheme();
-  const navigation = useNavigation();
-  const BOOKW = normalize(120, 150);
-  const BOOKH = BOOKW * 1.5;
-  const item = bookList.find((b) => b.bookId === book.bookId);
-
-  // View book details
-  const bookDetails = () => {
-    Haptics.selectionAsync();
-    navigation.push('BookDetails', { book });
-  };
-
-  // Styles
-  const styles = StyleSheet.create({
-    bookBox: {
-      flexDirection: 'row',
-      marginBottom: margin * 1.5,
-    },
-    imgBox: {
-      borderRadius: 10,
-      shadowRadius: 3,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 3, height: 3 },
-    },
-    bookImg: {
-      width: BOOKW,
-      height: BOOKH,
-      borderRadius: 10,
-    },
-    bookDetails: {
-      flex: 1,
-      justifyContent: 'center',
-      paddingLeft: margin * 1.5,
-    },
-    bookAuthor: {
-      marginVertical: margin / 4,
-    },
-  });
-
-  // Render Book
-  return (
-    <Pressable onPress={bookDetails} style={styles.bookBox}>
-      <SharedElement id={book.bookId}>
-        <View style={styles.imgBox}>
-          <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
-        </View>
-      </SharedElement>
-
-      <View style={styles.bookDetails}>
-        {item?.status && (
-          <Text bold color={colors.primary}>
-            {item.status}
-          </Text>
-        )}
-        <Text bold size={17} numberOfLines={2}>
-          {book.bookTitleBare}
-        </Text>
-        <Text style={styles.bookAuthor}>
-          {book.author.name}
-        </Text>
-        <Rating rating={book.avgRating} />
-      </View>
-    </Pressable>
-  );
-});
 
 // Default screen
 function SearchScreen({ navigation, route }) {
@@ -102,9 +22,8 @@ function SearchScreen({ navigation, route }) {
   const [books, setBooks] = useState([]);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
-  const search = useRef();
   const {
-    colors, width, height, margin, status, navbar,
+    colors, height, margin, status,
   } = useTheme();
 
   // Scroll Handler
@@ -138,10 +57,7 @@ function SearchScreen({ navigation, route }) {
 
   // Loaded animation fade in
   useEffect(() => {
-    setTimeout(() => {
-      search.current?.focus();
-      loaded.value = withTiming(1);
-    }, 350);
+    loaded.value = withTiming(1, { duration: 450 });
   }, []);
 
   // Animated styles
@@ -154,16 +70,12 @@ function SearchScreen({ navigation, route }) {
       padding: margin / 2,
       justifyContent: 'space-between',
       backgroundColor: colors.background,
-      opacity: interpolate(loaded.value, [0, 1], [0, 1], Extrapolate.CLAMP),
-      transform: [
-        { translateY: interpolate(loaded.value, [0, 1], [-navbar, 0], Extrapolate.CLAMP) },
-      ],
       shadowOpacity: interpolate(scrollY.value, [0, 20], [0, 0.75], Extrapolate.CLAMP),
     })),
     scrollView: useAnimatedStyle(() => ({
       opacity: interpolate(loaded.value, [0, 1], [0, 1], Extrapolate.CLAMP),
       transform: [
-        { translateY: interpolate(loaded.value, [0, 1], [100, 0], Extrapolate.CLAMP) },
+        { translateY: interpolate(loaded.value, [0, 1], [50, 0], Extrapolate.CLAMP) },
       ],
     })),
   };
@@ -175,25 +87,22 @@ function SearchScreen({ navigation, route }) {
       backgroundColor: colors.background,
     },
     sharedElement: {
-      height,
-      width: height,
-      bottom: -height,
-      right: -width / 2,
-      position: 'absolute',
-      borderRadius: height,
-      backgroundColor: colors.background,
+      flex: 1,
+      height: 40,
     },
     searchInput: {
       flex: 1,
       height: 40,
       fontSize: 15,
-      borderRadius: 22,
+      borderRadius: 20,
       color: colors.text,
       paddingHorizontal: 20,
+      borderWidth: 1,
+      borderColor: colors.background,
       backgroundColor: colors.card,
     },
     saveButton: {
-      width: 70,
+      width: 60,
       textAlign: 'right',
       color: '#888888',
     },
@@ -228,18 +137,17 @@ function SearchScreen({ navigation, route }) {
   // Render search page
   return (
     <View style={styles.screen}>
-      <SharedElement id="search">
-        <View style={styles.sharedElement} />
-      </SharedElement>
       <Animated.View style={anims.search}>
-        <TextInput
-          ref={search}
-          value={query}
-          autoCorrect={false}
-          onChangeText={(text) => setQuery(text)}
-          placeholder="Search"
-          style={styles.searchInput}
-        />
+        <SharedElement style={styles.sharedElement} id="search">
+          <TextInput
+            autoFocus
+            value={query}
+            autoCorrect={false}
+            onChangeText={(text) => setQuery(text)}
+            placeholder="Find your next book..."
+            style={styles.searchInput}
+          />
+        </SharedElement>
         <Pressable onPress={goBack}>
           <Text bold style={styles.saveButton}>Done</Text>
         </Pressable>

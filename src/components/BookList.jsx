@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import {
+  View, StyleSheet, FlatList, Pressable,
+} from 'react-native';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useTheme, useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
@@ -22,12 +24,17 @@ function BookList({ books, title }) {
     },
   });
 
+  const searchScreen = () => {
+    navigation.push('BookSearch', {
+      bookList: books,
+    });
+  };
+
   // All styles
   const styles = StyleSheet.create({
     list: {
       backgroundColor: colors.card,
-      borderTopLeftRadius: (title === 'Reading' ? 30 : 0),
-      borderTopRightRadius: (title === 'Reading' ? 30 : 0),
+      paddingTop: (title === 'Reading' ? margin : 0),
     },
     heading: {
       paddingTop: margin,
@@ -39,7 +46,7 @@ function BookList({ books, title }) {
       padding: margin,
     },
     emptyContainer: {
-      borderRadius: 10,
+      borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
       width: width - margin * 2,
@@ -53,12 +60,12 @@ function BookList({ books, title }) {
 
   // Empty list placeholder
   const EmptyList = () => (
-    <View style={styles.emptyContainer}>
+    <Pressable onPress={searchScreen} style={styles.emptyContainer}>
       <AntDesign color={colors.text} size={27} name="book" />
       <Text size={16} center style={styles.emptyText}>
         {'I\'m lonely. \n Add something here.'}
       </Text>
-    </View>
+    </Pressable>
   );
 
   // Render book list
