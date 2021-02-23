@@ -104,7 +104,7 @@ function BookHeader({ scrollY, book }) {
       </Animated.View>
 
       <Animated.View style={anims.title}>
-        <Text bold center size={21}>{book.bookTitleBare}</Text>
+        <Text bold center size={21} numberOfLines={2}>{book.bookTitleBare}</Text>
         <Text size={17} style={styles.author}>{`by ${book.author.name}`}</Text>
       </Animated.View>
 
