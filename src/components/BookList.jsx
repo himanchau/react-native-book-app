@@ -50,7 +50,7 @@ function BookList({ books, title }) {
       alignItems: 'center',
       justifyContent: 'center',
       width: width - margin * 2,
-      paddingVertical: margin * 2,
+      paddingVertical: margin * 3,
       backgroundColor: colors.background,
     },
     emptyText: {

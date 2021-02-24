@@ -13,7 +13,7 @@ export default function getTheme(scheme) {
     height,
     margin: normalize(20, 35),
     colors: {
-      primary: '#feca57',
+      primary: '#00d2d3',
       text: dark ? '#f2f2f2' : '#1a1a1a',
       card: dark ? '#000000' : '#ffffff',
       background: dark ? '#1a1a1a' : '#f2f2f2',

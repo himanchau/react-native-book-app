@@ -9,8 +9,9 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ff6b6b"
+      "backgroundColor": "#1a1a1a"
     },
+    "backgroundColor": "#1a1a1a",
     "updates": {
       "fallbackToCacheTimeout": 0
     },
@@ -18,7 +19,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.himanshu266.book-app"
     },
     "android": {
       "adaptiveIcon": {

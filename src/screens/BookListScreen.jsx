@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
-  interpolate, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
+  interpolate, withTiming,
+  useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
 } from 'react-native-reanimated';
 import { useTheme, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,6 +55,7 @@ function BookList({ navigation }) {
     const json = await AsyncStorage.getItem('@lists');
     const data = json ? JSON.parse(json) : [];
     setBookList(data);
+    loaded.value = withTiming(1, { duration: dark ? 250 : 500 });
   };
 
   // Go to search screen
@@ -67,7 +69,6 @@ function BookList({ navigation }) {
     React.useCallback(() => {
       if (!loaded.value) {
         loadData();
-        loaded.value = 1;
       } else {
         setTimeout(loadData, 450);
       }
@@ -98,10 +99,11 @@ function BookList({ navigation }) {
 
   // Styles
   const styles = {
-    screen: {
+    screen: useAnimatedStyle(() => ({
       flex: 1,
+      opacity: loaded.value,
       backgroundColor: colors.background,
-    },
+    })),
     header: useAnimatedStyle(() => ({
       top: 0,
       left: 0,
@@ -163,7 +165,7 @@ function BookList({ navigation }) {
       borderColor: colors.background,
     },
     searchIcon: {
-      marginRight: 10,
+      width: 30,
     },
     searchText: {
       opacity: 0.3,
@@ -175,7 +177,7 @@ function BookList({ navigation }) {
 
   // Render all the lists
   return (
-    <View style={styles.screen}>
+    <Animated.View style={styles.screen}>
       <Animated.View style={styles.header}>
         <Animated.View style={styles.logo}>
           <LottieViewAnimated
@@ -210,7 +212,7 @@ function BookList({ navigation }) {
         <List books={completed} title="Completed" navigation={navigation} />
         <List books={wishlist} title="Wishlist" navigation={navigation} />
       </Animated.ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
