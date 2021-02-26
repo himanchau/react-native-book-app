@@ -16,6 +16,24 @@ function RootNavigator() {
     },
   });
 
+  const bookTransition = {
+    animation: 'spring',
+    config: {
+      mass: 4,
+      damping: 100,
+      stiffness: 900,
+    },
+  };
+
+  const searchTranstion = {
+    animation: 'spring',
+    config: {
+      mass: 3,
+      damping: 200,
+      stiffness: 600,
+    },
+  };
+
   return (
     <BookStack.Navigator
       initialRouteName="BookList"
@@ -34,6 +52,10 @@ function RootNavigator() {
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,
+          transitionSpec: {
+            open: bookTransition,
+            close: bookTransition,
+          },
         }}
       />
       <BookStack.Screen
@@ -46,6 +68,10 @@ function RootNavigator() {
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,
+          transitionSpec: {
+            open: searchTranstion,
+            close: searchTranstion,
+          },
         }}
       />
     </BookStack.Navigator>

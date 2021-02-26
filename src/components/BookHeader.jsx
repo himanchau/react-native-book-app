@@ -48,6 +48,7 @@ function BookHeader({ scrollY, book }) {
       alignItems: 'center',
       opacity: interpolate(scrollY.value, [HEADER - navbar - 20, HEADER - navbar], [1, 0], 'clamp'),
       transform: [
+        { scale: interpolate(scrollY.value, [-100, 0], [1.1, 1], 'clamp') },
         { translateY: interpolate(scrollY.value, [0, HEADER / 6], [0, HEADER / 6], 'clamp') },
       ],
     })),
@@ -55,9 +56,6 @@ function BookHeader({ scrollY, book }) {
       paddingTop: margin,
       alignItems: 'center',
       paddingHorizontal: margin * 3,
-      transform: [
-        { translateY: interpolate(scrollY.value, [-50, 0], [20, 0], 'clamp') },
-      ],
       opacity: interpolate(scrollY.value, [0, 30], [1, 0], 'clamp'),
     })),
     title2: useAnimatedStyle(() => ({
@@ -77,9 +75,9 @@ function BookHeader({ scrollY, book }) {
   const styles = StyleSheet.create({
     imgBox: {
       borderRadius: 10,
-      shadowRadius: 3,
+      shadowRadius: 6,
       shadowOpacity: 0.3,
-      shadowOffset: { width: 3, height: 3 },
+      shadowOffset: { width: 0, height: 6 },
     },
     bookImg: {
       width: BOOKW,

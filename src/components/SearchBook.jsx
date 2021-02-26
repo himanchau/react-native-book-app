@@ -1,10 +1,8 @@
 /* eslint-disable no-nested-ternary */
-import React from 'react';
-import {
-  View, Image, StyleSheet, Pressable,
-} from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Image, Pressable } from 'react-native';
 import { SharedElement } from 'react-navigation-shared-element';
-import { useNavigation, useTheme } from '@react-navigation/native';
+import { useNavigation, useTheme, useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -28,24 +26,35 @@ function Book({ book, bookList }) {
   const BOOKW = normalize(120, 150);
   const BOOKH = BOOKW * 1.5;
   const item = bookList.find((b) => b.bookId === book.bookId);
+  const [opacity, setOpacity] = useState(1);
 
-  // View book details
+  // show book again
+  useFocusEffect(
+    useCallback(() => {
+      setOpacity(1);
+    }, []),
+  );
+
+  // view book details
+  // hide on current screen
   const bookDetails = () => {
     Haptics.selectionAsync();
+    setTimeout(() => setOpacity(0), 150);
     navigation.push('BookDetails', { book });
   };
 
   // Styles
-  const styles = StyleSheet.create({
+  const styles = {
     bookBox: {
       flexDirection: 'row',
       marginBottom: margin * 1.5,
     },
     imgBox: {
+      opacity,
       borderRadius: 10,
-      shadowRadius: 3,
+      shadowRadius: 6,
       shadowOpacity: 0.3,
-      shadowOffset: { width: 3, height: 3 },
+      shadowOffset: { width: 0, height: 6 },
     },
     bookImg: {
       width: BOOKW,
@@ -60,7 +69,7 @@ function Book({ book, bookList }) {
     bookAuthor: {
       marginVertical: margin / 4,
     },
-  });
+  };
 
   // Render Book
   return (

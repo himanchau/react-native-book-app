@@ -49,6 +49,7 @@ function BookDetails({ navigation, route }) {
   const sheetRef = useRef();
   const loaded = useSharedValue(0);
   const y = useSharedValue(0);
+  const x = useSharedValue(0);
   const closing = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const {
@@ -114,12 +115,12 @@ function BookDetails({ navigation, route }) {
   };
 
   // Scroll handler
-  const scrollHandler = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-    if (event.contentOffset.y <= 0 && !enabled) {
+  const scrollHandler = useAnimatedScrollHandler(({ contentOffset }) => {
+    scrollY.value = contentOffset.y;
+    if (contentOffset.y <= 0 && !enabled) {
       runOnJS(setEnabled)(true);
     }
-    if (event.contentOffset.y > 0 && enabled) {
+    if (contentOffset.y > 0 && enabled) {
       runOnJS(setEnabled)(false);
     }
   });
@@ -127,21 +128,25 @@ function BookDetails({ navigation, route }) {
   // Pan gesture handler
   const gestureHandler = useAnimatedGestureHandler({
     onStart: (_, ctx) => {
+      ctx.startX = x.value;
       ctx.startY = y.value;
     },
     onActive: (e, ctx) => {
-      const moved = ctx.startY + e.translationY;
-      y.value = moved > 0 ? moved : 0;
+      ctx.moved = Math.max(ctx.startY + e.translationY, ctx.startX + e.translationX);
+      ctx.velocity = Math.max(e.velocityX, e.velocityY);
+      y.value = ctx.startY + e.translationY;
+      x.value = ctx.startX + e.translationX;
 
-      // See if closing screen
-      if ((y.value >= 75 || e.velocityY >= 500) && !closing.value) {
+      // closing screen? do it!
+      if ((ctx.moved >= 75 || ctx.velocity >= 750) && !closing.value) {
         closing.value = 1;
         runOnJS(goBack)();
       }
     },
-    onEnd: (e) => {
-      if (y.value < 75 && e.velocityY < 500) {
+    onEnd: (e, ctx) => {
+      if (ctx.moved < 75 && ctx.velocity < 750) {
         y.value = withTiming(0);
+        x.value = withTiming(0);
       }
     },
   });
@@ -193,14 +198,15 @@ function BookDetails({ navigation, route }) {
       shadowOpacity: 0.5,
       shadowOffset: { height: 5 },
       transform: [
+        { translateX: x.value },
         { translateY: y.value },
-        { scale: interpolate(y.value, [0, 75], [1, 0.90], 'clamp') },
+        { scale: interpolate(Math.max(y.value, x.value), [0, 75], [1, 0.9], 'clamp') },
       ],
     })),
     scrollView: useAnimatedStyle(() => ({
       flex: 1,
-      borderRadius: 20,
       backgroundColor: colors.background,
+      borderRadius: interpolate(Math.max(y.value, x.value), [0, 10], [0, 40], 'clamp'),
     })),
     details: useAnimatedStyle(() => ({
       opacity: loaded.value,
@@ -311,13 +317,14 @@ function BookDetails({ navigation, route }) {
       <PanGestureHandler
         ref={panRef}
         failOffsetY={-5}
+        failOffsetX={-5}
         activeOffsetY={5}
-        enabled={enabled}
-        onGestureEvent={gestureHandler}
+        activeOffsetX={25}
+        onHandlerStateChange={gestureHandler}
       >
         <Animated.View style={anims.screen}>
           <StatusBar hidden={useIsFocused()} animated />
-          <BookHeader scrollY={scrollY} y={y} book={book} navigation={navigation} />
+          <BookHeader scrollY={scrollY} book={book} />
           <AntDesign size={27} name="close" onPress={goBack} style={styles.closeIcon} />
 
           <Animated.View style={anims.scrollView}>
