@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
   interpolate, withTiming,
   useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
 } from 'react-native-reanimated';
-import { useTheme, useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@react-navigation/native';
 import { SharedElement } from 'react-navigation-shared-element';
 import { AntDesign } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Text from '../components/Text';
-import List from '../components/BookList';
+import BookList from '../components/BookList';
+import StatusModal from '../components/StatusModal';
+import { useBookStore } from '../BookStore';
 
 const studies = require('../anims/landscape.json');
 
@@ -30,79 +31,49 @@ const getGreeting = () => {
   return 'Good Evening';
 };
 
-// Default screen
-function BookList({ navigation }) {
+// home screen
+function BookListScreen({ navigation }) {
   const {
     dark, width, colors, margin, navbar, normalize,
   } = useTheme();
   const HEADER = normalize(300, 400);
-  const [reading, setReading] = useState([]);
-  const [completed, setCompleted] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [bookList, setBookList] = useState([]);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
+  const { books } = useBookStore();
+  const sheetRef = useRef();
+  const [modalBook, setModalBook] = useState(null);
 
-  // Scrollview handler
+  // fade in screen, slowly if light mode is on
+  const onLayout = () => {
+    loaded.value = withTiming(1, { duration: dark ? 300 : 600 });
+  };
+
+  // scrollview handler
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: ({ contentOffset }) => {
       scrollY.value = contentOffset.y;
     },
   });
 
-  // Load data from async storage
-  const loadData = async () => {
-    const json = await AsyncStorage.getItem('@lists');
-    const data = json ? JSON.parse(json) : [];
-    setBookList(data);
-    loaded.value = withTiming(1, { duration: dark ? 250 : 500 });
-  };
-
-  // Go to search screen
+  // go to search screen
   const searchBooks = () => {
     Haptics.selectionAsync();
-    navigation.push('BookSearch', { bookList });
+    navigation.push('BookSearch', { bookList: books });
   };
 
-  // Reload books when focused
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!loaded.value) {
-        loadData();
-      } else {
-        setTimeout(loadData, 450);
-      }
-    }, []),
-  );
+  // edit selected book
+  const editBook = (book) => {
+    setModalBook(book);
+    Haptics.selectionAsync();
+    sheetRef.current?.open();
+  };
 
-  // Process and save list
-  useEffect(() => {
-    if (bookList.length) {
-      const [rList, cList, wList] = [[], [], []];
-      bookList.forEach((bk) => {
-        switch (bk.status) {
-          case 'Wishlist':
-            wList.push(bk);
-            break;
-          case 'Completed':
-            cList.push(bk);
-            break;
-          default:
-            rList.push(bk);
-        }
-        setReading(rList);
-        setCompleted(cList);
-        setWishlist(wList);
-      });
-    }
-  }, [bookList]);
-
-  // Styles
+  // all the styles
   const styles = {
     screen: useAnimatedStyle(() => ({
       flex: 1,
       opacity: loaded.value,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     })),
     header: useAnimatedStyle(() => ({
       top: 0,
@@ -175,9 +146,14 @@ function BookList({ navigation }) {
     },
   };
 
-  // Render all the lists
+  // filter books into their categories
+  const reading = books.filter((b) => b.status === 'Reading');
+  const completed = books.filter((b) => b.status === 'Completed');
+  const wishlist = books.filter((b) => b.status === 'Wishlist');
+
+  // render all the lists
   return (
-    <Animated.View style={styles.screen}>
+    <Animated.View onLayout={onLayout} style={styles.screen}>
       <Animated.View style={styles.header}>
         <Animated.View style={styles.logo}>
           <LottieViewAnimated
@@ -208,12 +184,13 @@ function BookList({ navigation }) {
         onScroll={scrollHandler}
         contentContainerStyle={styles.scrollView}
       >
-        <List books={reading} title="Reading" navigation={navigation} />
-        <List books={completed} title="Completed" navigation={navigation} />
-        <List books={wishlist} title="Wishlist" navigation={navigation} />
+        <BookList books={reading} editBook={editBook} title="Reading" />
+        <BookList books={completed} editBook={editBook} title="Completed" />
+        <BookList books={wishlist} editBook={editBook} title="Wishlist" />
       </Animated.ScrollView>
+      <StatusModal ref={sheetRef} book={modalBook} />
     </Animated.View>
   );
 }
 
-export default React.memo(BookList);
+export default React.memo(BookListScreen);

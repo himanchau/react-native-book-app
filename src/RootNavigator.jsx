@@ -19,9 +19,12 @@ function RootNavigator() {
   const bookTransition = {
     animation: 'spring',
     config: {
-      mass: 4,
-      damping: 100,
-      stiffness: 900,
+      mass: 3,
+      damping: 300,
+      stiffness: 1000,
+      overshootClamping: false,
+      restDisplacementThreshold: 10,
+      restSpeedThreshold: 10,
     },
   };
 
@@ -29,8 +32,11 @@ function RootNavigator() {
     animation: 'spring',
     config: {
       mass: 3,
-      damping: 200,
-      stiffness: 600,
+      damping: 300,
+      stiffness: 1000,
+      overshootClamping: false,
+      restDisplacementThreshold: 10,
+      restSpeedThreshold: 10,
     },
   };
 
@@ -48,7 +54,12 @@ function RootNavigator() {
       <BookStack.Screen
         name="BookDetails"
         component={BookDetailsScreen}
-        sharedElements={(route, otherRoute) => (['BookList', 'BookSearch', 'BookDetails'].includes(otherRoute.name) ? [route.params.book.bookId] : [])}
+        sharedElements={(route, otherRoute) => {
+          if (['BookList', 'BookSearch'].includes(otherRoute.name)) {
+            return [route.params.book.bookId];
+          }
+          return [];
+        }}
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,

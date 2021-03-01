@@ -11,26 +11,25 @@ import Book from './Book';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-// Horizontal list of books
-function BookList({ books, title }) {
+// horizontal flatlist of books
+function BookList({ books, editBook, title }) {
   const { width, margin, colors } = useTheme();
   const navigation = useNavigation();
   const scrollX = useSharedValue(0);
 
-  // Handle horizontal scroll
+  // handle horizontal scroll
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: ({ contentOffset }) => {
       scrollX.value = contentOffset.x;
     },
   });
 
+  // go to search screen
   const searchScreen = () => {
-    navigation.push('BookSearch', {
-      bookList: books,
-    });
+    navigation.push('BookSearch');
   };
 
-  // All styles
+  // all styles
   const styles = StyleSheet.create({
     list: {
       backgroundColor: colors.card,
@@ -58,7 +57,7 @@ function BookList({ books, title }) {
     },
   });
 
-  // Empty list placeholder
+  // empty list placeholder
   const EmptyList = () => (
     <Pressable onPress={searchScreen} style={styles.emptyContainer}>
       <AntDesign color={colors.text} size={27} name="book" />
@@ -68,7 +67,7 @@ function BookList({ books, title }) {
     </Pressable>
   );
 
-  // Render book list
+  // render book list
   return (
     <View style={styles.list}>
       <View style={styles.heading}>
@@ -84,7 +83,7 @@ function BookList({ books, title }) {
         data={books}
         keyExtractor={(i) => i.bookId}
         renderItem={({ item, index }) => (
-          <Book book={item} index={index} scrollX={scrollX} navigation={navigation} />
+          <Book book={item} editBook={editBook} index={index} scrollX={scrollX} />
         )}
         ListEmptyComponent={<EmptyList />}
       />

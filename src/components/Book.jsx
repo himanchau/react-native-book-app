@@ -13,7 +13,9 @@ import * as Haptics from 'expo-haptics';
 import Text from './Text';
 
 // Single book component
-function Book({ book, scrollX, index }) {
+function Book({
+  book, editBook, scrollX, index,
+}) {
   const navigation = useNavigation();
   const { margin, normalize } = useTheme();
   const BOOKW = normalize(120, 150);
@@ -81,7 +83,7 @@ function Book({ book, scrollX, index }) {
   });
 
   return (
-    <Pressable onPress={bookDetails}>
+    <Pressable onLongPress={() => editBook(book)} onPress={bookDetails}>
       <Animated.View style={anims.book}>
         <SharedElement id={book.bookId}>
           <View style={styles.imgBox}>

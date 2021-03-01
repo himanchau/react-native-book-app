@@ -5,6 +5,7 @@ import { AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
 import getTheme from './src/theme';
 import RootNavigator from './src/RootNavigator';
+import { BooksProvider } from './src/BookStore';
 
 export default function App() {
   const scheme = useColorScheme();
@@ -12,8 +13,10 @@ export default function App() {
   return (
     <AppearanceProvider>
       <NavigationContainer theme={getTheme(scheme)}>
-        <StatusBar />
-        <RootNavigator />
+        <BooksProvider>
+          <StatusBar />
+          <RootNavigator />
+        </BooksProvider>
       </NavigationContainer>
     </AppearanceProvider>
   );

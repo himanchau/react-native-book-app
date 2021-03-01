@@ -8,9 +8,7 @@ import Animated, {
   useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { PanGestureHandler, ScrollView } from 'react-native-gesture-handler';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, useIsFocused } from '@react-navigation/native';
-import { Modalize } from 'react-native-modalize';
 import { AntDesign } from '@expo/vector-icons';
 import { parse } from 'fast-xml-parser';
 import * as Haptics from 'expo-haptics';
@@ -20,6 +18,8 @@ import Text from '../components/Text';
 import List from '../components/BookList';
 import Button from '../components/Button';
 import BookHeader from '../components/BookHeader';
+import StatusModal from '../components/StatusModal';
+import { useBookStore } from '../BookStore';
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -38,10 +38,10 @@ const getIcon = (stat) => {
 };
 
 // Default screen
-function BookDetails({ navigation, route }) {
+function BookDetailsScreen({ navigation, route }) {
   const { book } = route.params;
+  const { books: bookList } = useBookStore();
   const [related, setRelated] = useState([]);
-  const [bookList, setBookList] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
   const [enabled, setEnabled] = useState(true);
@@ -57,61 +57,16 @@ function BookDetails({ navigation, route }) {
   } = useTheme();
   const HEADER = normalize(width + status, 500) + margin;
 
-  // Save data to async storage
-  const saveData = async () => {
-    await AsyncStorage.setItem('@lists', JSON.stringify(bookList));
-  };
-
-  // Load data from async storage
-  const loadData = async () => {
-    const json = await AsyncStorage.getItem('@lists');
-    const data = json != null ? JSON.parse(json) : null;
-    setBookList(data || []);
-  };
-
-  // Save data on list change
-  useEffect(() => {
-    if (bookList.length) {
-      saveData();
-    }
-  }, [bookList]);
-
   // Go back to previous screen
   const goBack = () => {
     navigation.goBack();
     Haptics.selectionAsync();
   };
 
-  // Open book lists sheet
+  // open book lists sheet
   const openSheet = () => {
     Haptics.selectionAsync();
     sheetRef.current?.open();
-  };
-
-  // Close book list sheet
-  const closeSheet = () => {
-    Haptics.notificationAsync('success');
-    sheetRef.current?.close();
-  };
-
-  // Add book to list
-  const addBook = (list) => {
-    // Find book in list and update
-    const item = bookList.find((b) => b.bookId === book.bookId);
-    if (item) {
-      setBookList((arr) => {
-        arr.splice(bookList.indexOf(item), 1);
-        if (list === 'Remove') {
-          return [...arr];
-        }
-        return [{ ...item, status: list }, ...arr];
-      });
-    } else {
-      // Add to list with proper status
-      setBookList((arr) => [{ ...book, status: list }, ...arr]);
-    }
-
-    closeSheet();
   };
 
   // Scroll handler
@@ -153,8 +108,6 @@ function BookDetails({ navigation, route }) {
 
   // Load book details
   useEffect(() => {
-    loadData();
-
     // Related Books
     axios.get(`https://www.goodreads.com/book/auto_complete?format=json&q=${book.author.name}`)
       .then((resp) => {
@@ -284,28 +237,6 @@ function BookDetails({ navigation, route }) {
     addIcon: {
       top: 3,
     },
-    modal: {
-      padding: margin,
-      borderRadius: 12,
-      paddingBottom: status,
-      backgroundColor: colors.card,
-    },
-    flexRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    marginB: {
-      marginBottom: margin,
-    },
-    iconBtn: {
-      padding: 0,
-      backgroundColor: colors.card,
-    },
-    iconLeft: {
-      fontSize: 21,
-      color: colors.text,
-      marginRight: margin,
-    },
   };
 
   // Find book in list
@@ -372,38 +303,9 @@ function BookDetails({ navigation, route }) {
           </Animated.View>
         </Animated.View>
       </PanGestureHandler>
-
-      <Modalize ref={sheetRef} threshold={50} adjustToContentHeight>
-        <View style={styles.modal}>
-          <View style={[styles.flexRow, styles.marginB]}>
-            <Text bold size={20}>Add To</Text>
-            <Text bold onPress={closeSheet}>Done</Text>
-          </View>
-          <Pressable onPress={() => addBook('Reading')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button onPress={() => addBook('Reading')} name="rocket1" style={styles.iconBtn} iconStyle={styles.iconLeft}>
-              <Text size={17}>Reading</Text>
-            </AntDesign.Button>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Reading' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => addBook('Completed')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button onPress={() => addBook('Completed')} name="Trophy" style={styles.iconBtn} iconStyle={styles.iconLeft}>
-              <Text size={17}>Completed</Text>
-            </AntDesign.Button>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Completed' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => addBook('Wishlist')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button onPress={() => addBook('Wishlist')} name="book" style={styles.iconBtn} iconStyle={styles.iconLeft}>
-              <Text size={17}>Wishlist</Text>
-            </AntDesign.Button>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Wishlist' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => addBook('Remove')}>
-            <Text center size={16} color="#ff3b30">Remove</Text>
-          </Pressable>
-        </View>
-      </Modalize>
+      <StatusModal ref={sheetRef} book={book} />
     </>
   );
 }
 
-export default React.memo(BookDetails);
+export default React.memo(BookDetailsScreen);

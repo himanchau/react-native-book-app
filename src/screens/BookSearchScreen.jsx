@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, TextInput, Alert, Image, StyleSheet, Pressable,
+  View, TextInput, Alert, Image, StyleSheet, Pressable, Keyboard,
 } from 'react-native';
 import Animated, {
   interpolate, Extrapolate, withTiming, useSharedValue, useAnimatedScrollHandler, useAnimatedStyle,
@@ -12,33 +12,50 @@ import axios from 'axios';
 
 import Text from '../components/Text';
 import Book from '../components/SearchBook';
+import StatusModal from '../components/StatusModal';
+import { useBookStore } from '../BookStore';
 
 const bookImg = require('../images/books.png');
 
 // Default screen
-function SearchScreen({ navigation, route }) {
-  const { bookList } = route.params;
-  const [query, setQuery] = useState('');
-  const [books, setBooks] = useState([]);
-  const scrollY = useSharedValue(0);
-  const loaded = useSharedValue(0);
+function BookSearchScreen({ navigation }) {
   const {
     colors, height, margin, status,
   } = useTheme();
+  const { books: bookList } = useBookStore();
+  const [query, setQuery] = useState('');
+  const [books, setBooks] = useState([]);
+  const [modalBook, setModalBook] = useState(null);
+  const scrollY = useSharedValue(0);
+  const loaded = useSharedValue(0);
+  const sheetRef = useRef();
 
-  // Scroll Handler
+  // animate on screen load
+  const onLayout = () => {
+    loaded.value = withTiming(1);
+  };
+
+  // scroll handler
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
 
-  // Return with book list
+  // go to home screen
   const goBack = () => {
     loaded.value = withTiming(0);
     Haptics.selectionAsync();
     navigation.goBack();
   };
 
-  // Search
+  // edit selected book
+  const editBook = (book) => {
+    setModalBook(book);
+    Keyboard.dismiss();
+    Haptics.selectionAsync();
+    sheetRef.current?.open();
+  };
+
+  // search query
   useEffect(() => {
     if (query.length > 0) {
       axios.get(`https://www.goodreads.com/book/auto_complete?format=json&q=${query}`)
@@ -55,12 +72,7 @@ function SearchScreen({ navigation, route }) {
     }
   }, [query]);
 
-  // Loaded animation fade in
-  useEffect(() => {
-    loaded.value = withTiming(1, { duration: 450 });
-  }, []);
-
-  // Animated styles
+  // animated styles
   const anims = {
     search: useAnimatedStyle(() => ({
       zIndex: 10,
@@ -124,7 +136,7 @@ function SearchScreen({ navigation, route }) {
     },
   });
 
-  // Empty screen placeholder
+  // empty screen placeholder
   const PlaceHolder = () => (
     <View style={styles.placeholderBox}>
       <Image source={bookImg} resizeMode="contain" style={styles.placeholderImg} />
@@ -134,9 +146,9 @@ function SearchScreen({ navigation, route }) {
     </View>
   );
 
-  // Render search page
+  // render search page
   return (
-    <View style={styles.screen}>
+    <View onLayout={onLayout} style={styles.screen}>
       <Animated.View style={anims.search}>
         <SharedElement style={styles.sharedElement} id="search">
           <TextInput
@@ -162,10 +174,13 @@ function SearchScreen({ navigation, route }) {
         style={anims.scrollView}
       >
         {!books.length && <PlaceHolder />}
-        {books.map((book) => <Book key={book.bookId} book={book} bookList={bookList} />)}
+        {books.map((book) => (
+          <Book key={book.bookId} book={book} editBook={editBook} bookList={bookList} />
+        ))}
       </Animated.ScrollView>
+      <StatusModal ref={sheetRef} book={modalBook} />
     </View>
   );
 }
 
-export default React.memo(SearchScreen);
+export default React.memo(BookSearchScreen);

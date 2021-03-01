@@ -20,7 +20,7 @@ const Rating = React.memo(({ rating }) => (
 ));
 
 // Render book
-function Book({ book, bookList }) {
+function Book({ book, editBook, bookList }) {
   const { margin, colors, normalize } = useTheme();
   const navigation = useNavigation();
   const BOOKW = normalize(120, 150);
@@ -73,7 +73,7 @@ function Book({ book, bookList }) {
 
   // Render Book
   return (
-    <Pressable onPress={bookDetails} style={styles.bookBox}>
+    <Pressable onLongPress={() => editBook(book)} onPress={bookDetails} style={styles.bookBox}>
       <SharedElement id={book.bookId}>
         <View style={styles.imgBox}>
           <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
