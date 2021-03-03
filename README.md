@@ -41,19 +41,19 @@ react-navigation-shared-element
 ```
 
 ### Reference Material
-Reanimated 2
+Reanimated 2  
 https://docs.swmansion.com/react-native-reanimated/docs
 
-Shared Element Navigation
+Shared Element Navigation  
 https://github.com/IjzerenHein/react-navigation-shared-element/blob/navigation-v5/README.md
 
-Lottie Animations
+Lottie Animations  
 https://github.com/lottie-react-native/lottie-react-native
 
-**Android**
+**Android**  
 If you're running into issues with Android please make sure to check that reanimated and shared navigation element (v5) are installed properly with the right versions and Layout Animations have been enabled.
 
-**React Native Community**
+**React Native Community**  
 Was this helpful? Want to see more code like this? Would you like this as an template? Just want share your thoughts? Catch me at [@himanshuchauu](https://twitter.com/himanchauu).
 
 [Caffeine Appreciation](https://www.buymeacoffee.com/himanchau)
