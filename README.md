@@ -21,12 +21,12 @@ This is a sample application that makes use of reanimateed, shared elements tran
 - [x] iOS + Android support
 
 ### Code Structure
-There are 3 main screens: list screen, search screen and book details. There's a fun intro / welcome screen with lottie animations as well.
-Important Code:
-`src/screens/...jsx` App Screens
-`src/components/...jsx` Reusable Components
-`src/anims/...json` Lotties Animations
-`src/theme.js` Themes for light and dark
+There are 3 main screens: list screen, search screen and book details. There's a fun intro / welcome screen with lottie animations as well.  
+Important Code:  
+`src/screens/...jsx` App Screens  
+`src/components/...jsx` Reusable Components  
+`src/anims/...json` Lotties Animations  
+`src/theme.js` Themes for light and dark  
 `src/RootNavigator.jsx` App navigation
 
 ### Dependencies
