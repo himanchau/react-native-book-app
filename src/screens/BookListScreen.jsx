@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, Platform } from 'react-native';
 import Animated, {
   interpolate, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
 } from 'react-native-reanimated';
@@ -113,7 +113,7 @@ function BookList({ navigation }) {
       position: 'absolute',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      shadowOffset: { height: 2, width: 0 },
+      shadowOffset: (Platform.OS === 'ios') ? { height: 2, width: 0 } : {},
       backgroundColor: colors.background,
       shadowOpacity: interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp'),
       transform: [

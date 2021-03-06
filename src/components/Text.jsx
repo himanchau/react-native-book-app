@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 
@@ -14,7 +14,7 @@ function AnimatedText(props) {
     color: color || colors.text,
     fontSize: size || 14,
     fontWeight: bold ? '500' : '400',
-    fontFamily: 'Avenir Next',
+    fontFamily: (Platform.OS === 'ios') ? 'Avenir Next' : '',
     textAlign: center ? 'center' : null,
   });
 
