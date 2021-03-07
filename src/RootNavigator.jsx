@@ -89,4 +89,4 @@ function RootNavigator() {
   );
 }
 
-export default RootNavigator;
+export default React.memo(RootNavigator);

@@ -115,4 +115,4 @@ function BookHeader({ scrollY, book }) {
   );
 }
 
-export default (BookHeader);
+export default React.memo(BookHeader);

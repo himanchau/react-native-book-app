@@ -1,13 +1,12 @@
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useImmer } from 'use-immer';
 
 // context for gloabal book list
 const BooksContext = React.createContext();
 
 // global provider for books
 const BooksProvider = ({ children }) => {
-  const [books, dispatch] = useImmer([]);
+  const [books, dispatch] = useState([]);
 
   // load books from async storage
   async function loadBooks() {
@@ -41,32 +40,32 @@ const BooksProvider = ({ children }) => {
 
 // custom bookstore hook
 function useBookStore() {
-  const [books, dispatch] = useContext(BooksContext);
+  const [books, setBooks] = useContext(BooksContext);
 
   // add book to list
   function addBook(book, list) {
-    dispatch((draft) => {
-      draft.unshift({
-        ...book,
-        status: list,
-        addedOn: Date.now(),
-      });
-    });
+    setBooks((arr) => [{
+      ...book,
+      status: list,
+      addedOn: Date.now(),
+    }, ...arr]);
   }
 
   // update or remove from list
   function updateBook(book, list) {
-    dispatch((draft) => {
-      const index = draft.findIndex((b) => b.bookId === book.bookId);
-      if (index !== -1) draft[index].status = list;
+    setBooks((arr) => {
+      const index = arr.findIndex((b) => b.bookId === book.bookId);
+      arr.splice(index, 1);
+      return [{ ...book, status: list }, ...arr];
     });
   }
 
   // remove book from list
   function removeBook(book) {
-    dispatch((draft) => {
-      const index = draft.findIndex((b) => b.bookId === book.bookId);
-      if (index !== -1) draft.splice(index, 1);
+    setBooks((arr) => {
+      const index = arr.findIndex((b) => b.bookId === book.bookId);
+      arr.splice(index, 1);
+      return [...arr];
     });
   }
 
