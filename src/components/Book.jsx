@@ -1,35 +1,24 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
-  Pressable, View, Image, StyleSheet, LayoutAnimation,
+  View, Image, StyleSheet, LayoutAnimation,
 } from 'react-native';
 import Animated, {
-  withTiming, withDelay, interpolate, Extrapolate,
+  withTiming, interpolate, Extrapolate,
   useDerivedValue, useAnimatedStyle, useSharedValue,
 } from 'react-native-reanimated';
-import { useTheme, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 import { SharedElement } from 'react-navigation-shared-element';
-import * as Haptics from 'expo-haptics';
 
 import Text from './Text';
 
-// Single book component
-function Book({
-  book, editBook, scrollX, index,
-}) {
-  const navigation = useNavigation();
+// single book component
+function Book({ book, scrollX, index }) {
   const { margin, normalize } = useTheme();
   const BOOKW = normalize(120, 150);
   const BOOKH = BOOKW * 1.5;
   const position = useDerivedValue(() => (index + 0.00001) * (BOOKW + margin) - scrollX.value);
   const inputRange = [-BOOKW, 0, BOOKW, BOOKW * 3];
   const loaded = useSharedValue(0);
-  const opacity = useSharedValue(1);
-
-  useFocusEffect(
-    useCallback(() => {
-      opacity.value = withTiming(1);
-    }, []),
-  );
 
   // slide books in
   useEffect(() => {
@@ -37,17 +26,9 @@ function Book({
     loaded.value = withTiming(1);
   }, []);
 
-  // View book details
-  const bookDetails = () => {
-    Haptics.selectionAsync();
-    opacity.value = withDelay(150, withTiming(0));
-    navigation.push('BookDetails', { book });
-  };
-
-  // Animated styles
+  // animated styles
   const anims = {
     book: useAnimatedStyle(() => ({
-      opacity: opacity.value,
       transform: [
         { perspective: 800 },
         { scale: interpolate(position.value, inputRange, [0.9, 1, 1, 1], Extrapolate.CLAMP) },
@@ -61,7 +42,7 @@ function Book({
     })),
   };
 
-  // Styles
+  // non animated styles
   const styles = StyleSheet.create({
     imgBox: {
       marginRight: margin,
@@ -83,18 +64,16 @@ function Book({
   });
 
   return (
-    <Pressable onLongPress={() => editBook(book)} onPress={bookDetails}>
-      <Animated.View style={anims.book}>
-        <SharedElement id={book.bookId}>
-          <View style={styles.imgBox}>
-            <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
-          </View>
-        </SharedElement>
-        <Text size={13} numberOfLines={1} center style={styles.bookText}>
-          {book.author.name}
-        </Text>
-      </Animated.View>
-    </Pressable>
+    <Animated.View style={anims.book}>
+      <SharedElement id={book.bookId}>
+        <View style={styles.imgBox}>
+          <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
+        </View>
+      </SharedElement>
+      <Text size={13} numberOfLines={1} center style={styles.bookText}>
+        {book.author.name}
+      </Text>
+    </Animated.View>
   );
 }
 

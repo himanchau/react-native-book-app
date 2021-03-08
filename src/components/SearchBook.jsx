@@ -1,14 +1,13 @@
 /* eslint-disable no-nested-ternary */
-import React, { useState, useCallback } from 'react';
-import { View, Image, Pressable } from 'react-native';
+import React from 'react';
+import { View, Image } from 'react-native';
 import { SharedElement } from 'react-navigation-shared-element';
-import { useNavigation, useTheme, useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 import Text from './Text';
 
-// Star rating
+// star rating
 const Rating = React.memo(({ rating }) => (
   <View style={{ width: 90, flexDirection: 'row', justifyContent: 'space-between' }}>
     <FontAwesome size={16} name={rating < 0.5 ? 'star-o' : rating < 0.5 ? 'star-half-o' : 'star'} color="#f39c12" />
@@ -19,38 +18,20 @@ const Rating = React.memo(({ rating }) => (
   </View>
 ));
 
-// Render book
-function Book({ book, editBook, bookList }) {
+// render search screen book
+function Book({ book, bookList }) {
   const { margin, colors, normalize } = useTheme();
-  const navigation = useNavigation();
   const BOOKW = normalize(120, 150);
   const BOOKH = BOOKW * 1.5;
   const item = bookList.find((b) => b.bookId === book.bookId);
-  const [opacity, setOpacity] = useState(1);
 
-  // show book again
-  useFocusEffect(
-    useCallback(() => {
-      setOpacity(1);
-    }, []),
-  );
-
-  // view book details
-  // hide on current screen
-  const bookDetails = () => {
-    Haptics.selectionAsync();
-    setTimeout(() => setOpacity(0), 150);
-    navigation.push('BookDetails', { book });
-  };
-
-  // Styles
+  // styles
   const styles = {
     bookBox: {
       flexDirection: 'row',
       marginBottom: margin * 1.5,
     },
     imgBox: {
-      opacity,
       borderRadius: 10,
       shadowRadius: 6,
       shadowOpacity: 0.3,
@@ -71,9 +52,9 @@ function Book({ book, editBook, bookList }) {
     },
   };
 
-  // Render Book
+  // render serach book
   return (
-    <Pressable onLongPress={() => editBook(book)} onPress={bookDetails} style={styles.bookBox}>
+    <View style={styles.bookBox}>
       <SharedElement id={book.bookId}>
         <View style={styles.imgBox}>
           <Image style={styles.bookImg} source={{ uri: book.imageUrl }} />
@@ -94,7 +75,7 @@ function Book({ book, editBook, bookList }) {
         </Text>
         <Rating rating={book.avgRating} />
       </View>
-    </Pressable>
+    </View>
   );
 }
 

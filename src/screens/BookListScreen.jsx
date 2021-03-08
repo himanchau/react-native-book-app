@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
   interpolate, withTiming,
@@ -12,7 +12,6 @@ import * as Haptics from 'expo-haptics';
 
 import Text from '../components/Text';
 import BookList from '../components/BookList';
-import StatusModal from '../components/StatusModal';
 import { useBookStore } from '../BookStore';
 
 const studies = require('../anims/landscape.json');
@@ -40,8 +39,6 @@ function BookListScreen({ navigation }) {
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
   const [books] = useBookStore();
-  const sheetRef = useRef();
-  const [modalBook, setModalBook] = useState(null);
 
   // fade in screen, slowly if light mode is on
   const onLayout = () => {
@@ -59,13 +56,6 @@ function BookListScreen({ navigation }) {
   const searchBooks = () => {
     Haptics.selectionAsync();
     navigation.push('BookSearch', { bookList: books });
-  };
-
-  // edit selected book
-  const editBook = (book) => {
-    setModalBook(book);
-    Haptics.selectionAsync();
-    sheetRef.current?.open();
   };
 
   // all the styles
@@ -184,11 +174,10 @@ function BookListScreen({ navigation }) {
         onScroll={scrollHandler}
         contentContainerStyle={styles.scrollView}
       >
-        <BookList books={reading} editBook={editBook} title="Reading" />
-        <BookList books={completed} editBook={editBook} title="Completed" />
-        <BookList books={wishlist} editBook={editBook} title="Wishlist" />
+        <BookList books={reading} title="Reading" />
+        <BookList books={completed} title="Completed" />
+        <BookList books={wishlist} title="Wishlist" />
       </Animated.ScrollView>
-      <StatusModal ref={sheetRef} books={books} book={modalBook} />
     </Animated.View>
   );
 }

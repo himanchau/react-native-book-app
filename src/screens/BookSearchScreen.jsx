@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, TextInput, Alert, Image, StyleSheet, Pressable, Keyboard,
 } from 'react-native';
@@ -12,8 +12,8 @@ import axios from 'axios';
 
 import Text from '../components/Text';
 import Book from '../components/SearchBook';
-import StatusModal from '../components/StatusModal';
 import { useBookStore } from '../BookStore';
+import { useModal } from '../components/StatusModal';
 
 const bookImg = require('../images/books.png');
 
@@ -22,13 +22,12 @@ function BookSearchScreen({ navigation }) {
   const {
     colors, height, margin, status,
   } = useTheme();
+  const { setModalBook } = useModal();
   const [bookList] = useBookStore();
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
-  const [modalBook, setModalBook] = useState(null);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
-  const sheetRef = useRef();
 
   // animate on screen load
   const onLayout = () => {
@@ -47,12 +46,18 @@ function BookSearchScreen({ navigation }) {
     navigation.goBack();
   };
 
+  // view book details
+  // hide on current screen
+  const bookDetails = (book) => {
+    Haptics.selectionAsync();
+    navigation.push('BookDetails', { book });
+  };
+
   // edit selected book
-  const editBook = (book) => {
+  const editStatus = (book) => {
     setModalBook(book);
     Keyboard.dismiss();
     Haptics.selectionAsync();
-    sheetRef.current?.open();
   };
 
   // search query
@@ -175,10 +180,15 @@ function BookSearchScreen({ navigation }) {
       >
         {!books.length && <PlaceHolder />}
         {books.map((book) => (
-          <Book key={book.bookId} book={book} editBook={editBook} bookList={bookList} />
+          <Pressable
+            key={book.bookId}
+            onPress={() => bookDetails(book)}
+            onLongPress={() => editStatus(book)}
+          >
+            <Book book={book} bookList={bookList} />
+          </Pressable>
         ))}
       </Animated.ScrollView>
-      <StatusModal ref={sheetRef} books={bookList} book={modalBook} />
     </View>
   );
 }
