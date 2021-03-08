@@ -22,7 +22,7 @@ function BookSearchScreen({ navigation }) {
   const {
     colors, height, margin, status,
   } = useTheme();
-  const { books: bookList } = useBookStore();
+  const [bookList] = useBookStore();
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
   const [modalBook, setModalBook] = useState(null);
@@ -178,7 +178,7 @@ function BookSearchScreen({ navigation }) {
           <Book key={book.bookId} book={book} editBook={editBook} bookList={bookList} />
         ))}
       </Animated.ScrollView>
-      <StatusModal ref={sheetRef} book={modalBook} />
+      <StatusModal ref={sheetRef} books={bookList} book={modalBook} />
     </View>
   );
 }

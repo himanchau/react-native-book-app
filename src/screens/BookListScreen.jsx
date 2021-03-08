@@ -39,7 +39,7 @@ function BookListScreen({ navigation }) {
   const HEADER = normalize(300, 400);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
-  const { books } = useBookStore();
+  const [books] = useBookStore();
   const sheetRef = useRef();
   const [modalBook, setModalBook] = useState(null);
 
@@ -188,7 +188,7 @@ function BookListScreen({ navigation }) {
         <BookList books={completed} editBook={editBook} title="Completed" />
         <BookList books={wishlist} editBook={editBook} title="Wishlist" />
       </Animated.ScrollView>
-      <StatusModal ref={sheetRef} book={modalBook} />
+      <StatusModal ref={sheetRef} books={books} book={modalBook} />
     </Animated.View>
   );
 }

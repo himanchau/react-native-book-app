@@ -40,7 +40,7 @@ const getIcon = (stat) => {
 // Default screen
 function BookDetailsScreen({ navigation, route }) {
   const { book } = route.params;
-  const { books: bookList } = useBookStore();
+  const [bookList] = useBookStore();
   const [related, setRelated] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
@@ -303,7 +303,7 @@ function BookDetailsScreen({ navigation, route }) {
           </Animated.View>
         </Animated.View>
       </PanGestureHandler>
-      <StatusModal ref={sheetRef} book={book} />
+      <StatusModal ref={sheetRef} books={bookList} book={book} />
     </>
   );
 }

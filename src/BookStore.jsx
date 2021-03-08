@@ -1,77 +1,94 @@
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useReducer, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // context for gloabal book list
-const BooksContext = React.createContext();
+const StateContext = React.createContext();
+const DispatchContext = React.createContext();
 
-// global provider for books
-const BooksProvider = ({ children }) => {
-  const [books, dispatch] = useState([]);
+// load books from async storage
+async function loadBooks(dispatch) {
+  const json = await AsyncStorage.getItem('@lists');
+  const data = json ? JSON.parse(json) : [];
+  dispatch({ type: 'SET_BOOKS', payload: data });
+}
 
-  // load books from async storage
-  async function loadBooks() {
-    const json = await AsyncStorage.getItem('@lists');
-    const data = json ? JSON.parse(json) : [];
-    dispatch(() => data);
+// save books to async storage
+async function saveBooks(state) {
+  AsyncStorage.setItem('@lists', JSON.stringify(state));
+}
+
+// reducer for state
+function reducer(state, { type, payload }) {
+  let newState = [];
+  let index = -1;
+
+  // update books state
+  switch (type) {
+    case 'SET_BOOKS':
+      newState = payload;
+      break;
+    case 'ADD_BOOK':
+      newState = [{
+        ...payload.book,
+        status: payload.list,
+        addedOn: Date.now(),
+      }, ...state];
+      break;
+    case 'UPDATE_BOOK':
+      index = state.findIndex((b) => b.bookId === payload.book.bookId);
+      state.splice(index, 1);
+      newState = [{
+        ...payload.book,
+        status: payload.list,
+      }, ...state];
+      break;
+    case 'REMOVE_BOOK':
+      index = state.findIndex((b) => b.bookId === payload.book.bookId);
+      state.splice(index, 1);
+      newState = [...state];
+      break;
+    default:
+      throw new Error('Invalid action!');
   }
 
-  // save books to async storage
-  async function saveBooks() {
-    await AsyncStorage.setItem('@lists', JSON.stringify(books));
-  }
+  // save to store & return
+  saveBooks(newState);
+  return newState;
+}
+
+// context provider with default state
+export function BooksProvider({ children }) {
+  const [state, dispatch] = useReducer(reducer, []);
 
   // load books on initialize
   useEffect(() => {
-    loadBooks();
+    loadBooks(dispatch);
   }, []);
 
-  // save books if changed
-  useEffect(() => {
-    if (books.length) saveBooks();
-  }, [books]);
-
-  // return the provider
   return (
-    <BooksContext.Provider value={[books, dispatch]}>
-      {children}
-    </BooksContext.Provider>
+    <StateContext.Provider value={state}>
+      <DispatchContext.Provider value={dispatch}>
+        {children}
+      </DispatchContext.Provider>
+    </StateContext.Provider>
   );
-};
-
-// custom bookstore hook
-function useBookStore() {
-  const [books, setBooks] = useContext(BooksContext);
-
-  // add book to list
-  function addBook(book, list) {
-    setBooks((arr) => [{
-      ...book,
-      status: list,
-      addedOn: Date.now(),
-    }, ...arr]);
-  }
-
-  // update or remove from list
-  function updateBook(book, list) {
-    setBooks((arr) => {
-      const index = arr.findIndex((b) => b.bookId === book.bookId);
-      arr.splice(index, 1);
-      return [{ ...book, status: list }, ...arr];
-    });
-  }
-
-  // remove book from list
-  function removeBook(book) {
-    setBooks((arr) => {
-      const index = arr.findIndex((b) => b.bookId === book.bookId);
-      arr.splice(index, 1);
-      return [...arr];
-    });
-  }
-
-  return {
-    books, addBook, updateBook, removeBook,
-  };
 }
 
-export { BooksProvider, BooksContext, useBookStore };
+// state consumer hook
+export function useBookState() {
+  const context = useContext(StateContext);
+  if (context === undefined) throw new Error('useBookState must be used within a Provider');
+  return context;
+}
+
+// state dispatcher hook
+export function useBookDispatch() {
+  const context = useContext(DispatchContext);
+  if (context === undefined) throw new Error('useBookDispatch must be used within a Provider');
+  return context;
+}
+
+// combine as [state, dispatch]
+export function useBookStore() {
+  return [useBookState(), useBookDispatch()];
+}

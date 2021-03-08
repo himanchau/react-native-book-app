@@ -6,14 +6,12 @@ import { Modalize } from 'react-native-modalize';
 import * as Haptics from 'expo-haptics';
 
 import Text from './Text';
-import { useBookStore } from '../BookStore';
+import { useBookDispatch } from '../BookStore';
 
 // Themeable Button
-function StatusModal({ book }, ref) {
+function StatusModal({ books, book }, ref) {
   const { colors, margin, status } = useTheme();
-  const {
-    books, addBook, updateBook, removeBook,
-  } = useBookStore();
+  const dispatch = useBookDispatch();
 
   const styles = StyleSheet.create({
     modal: {
@@ -56,11 +54,11 @@ function StatusModal({ book }, ref) {
   const updateList = (list) => {
     const index = books.findIndex((b) => b.bookId === book.bookId);
     if (index === -1) {
-      addBook(book, list);
+      dispatch({ type: 'ADD_BOOK', payload: { book, list } });
     } else if (list === 'Remove') {
-      removeBook(book);
+      dispatch({ type: 'REMOVE_BOOK', payload: { book, list } });
     } else {
-      updateBook(book, list);
+      dispatch({ type: 'UPDATE_BOOK', payload: { book, list } });
     }
     closeSheet();
   };
@@ -107,4 +105,4 @@ function StatusModal({ book }, ref) {
   );
 }
 
-export default forwardRef(StatusModal);
+export default React.memo(forwardRef(StatusModal));
