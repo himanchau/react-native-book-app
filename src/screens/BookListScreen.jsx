@@ -33,7 +33,7 @@ const getGreeting = () => {
 // home screen
 function BookListScreen({ navigation }) {
   const {
-    dark, width, colors, margin, navbar, normalize,
+    dark, width, colors, margin, navbar, normalize, ios,
   } = useTheme();
   const HEADER = normalize(300, 400);
   const scrollY = useSharedValue(0);
@@ -70,15 +70,16 @@ function BookListScreen({ navigation }) {
       left: 0,
       right: 0,
       zIndex: 10,
-      height: HEADER,
+      height: interpolate(scrollY.value, [-300, 0], [HEADER + 300, HEADER], 'clamp'),
       paddingTop: navbar,
-      shadowRadius: 4,
       position: 'absolute',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      shadowOffset: { height: 2, width: 0 },
+      elevation: ios ? undefined : interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 10], 'clamp'),
+      shadowRadius: ios ? 4 : undefined,
+      shadowOffset: ios ? { height: 2, width: 0 } : undefined,
+      shadowOpacity: ios ? interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp') : undefined,
       backgroundColor: colors.background,
-      shadowOpacity: interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp'),
       transform: [
         { translateY: interpolate(scrollY.value, [0, HEADER - navbar], [0, -HEADER + navbar], 'clamp') },
       ],
@@ -86,26 +87,17 @@ function BookListScreen({ navigation }) {
     logo: useAnimatedStyle(() => ({
       opacity: interpolate(scrollY.value, [0, HEADER - 100], [1, 0], 'clamp'),
       transform: [
-        { translateY: interpolate(scrollY.value, [-200, 0], [50, 0], 'clamp') },
+        { translateY: interpolate(scrollY.value, [-300, 0], [-150, 0], 'clamp') },
       ],
     })),
     lottie: {
-      alignSelf: 'center',
-      height: '110%',
-      marginLeft: 10,
+      top: 5,
+      height: '100%',
       opacity: dark ? 0.8 : 1,
     },
     lottieProps: useAnimatedProps(() => ({
       speed: 0.5,
       autoPlay: true,
-      // progress: scrollY.value
-      //   ? interpolate(scrollY.value, [-200, 0, 200], [0, 0.5, 1], 'clamp')
-      //   : withTiming(1, { duration: 5000 }),
-    })),
-    welcome: useAnimatedStyle(() => ({
-      transform: [
-        { translateY: interpolate(scrollY.value, [-200, 0], [200, 0], 'clamp') },
-      ],
     })),
     welcomeText: useAnimatedStyle(() => ({
       transform: [
@@ -152,25 +144,23 @@ function BookListScreen({ navigation }) {
             animatedProps={styles.lottieProps}
           />
         </Animated.View>
-        <Animated.View style={styles.welcome}>
-          <Text animated style={styles.welcomeText} center size={20}>
-            {getGreeting()}
-          </Text>
-          <SharedElement id="search">
-            <Pressable onPress={searchBooks} style={styles.searchInput}>
-              <Text size={15} style={styles.searchText}>
-                <View style={styles.searchIcon}>
-                  <AntDesign color={colors.text} name="search1" size={15} />
-                </View>
-                Find your next book...
-              </Text>
-            </Pressable>
-          </SharedElement>
-        </Animated.View>
+        <Text animated style={styles.welcomeText} center size={20}>
+          {getGreeting()}
+        </Text>
+        <SharedElement id="search">
+          <Pressable onPress={searchBooks} style={styles.searchInput}>
+            <Text size={15} style={styles.searchText}>
+              <View style={styles.searchIcon}>
+                <AntDesign color={colors.text} name="search1" size={15} />
+              </View>
+              Find your next book...
+            </Text>
+          </Pressable>
+        </SharedElement>
       </Animated.View>
 
       <Animated.ScrollView
-        scrollEventThrottle={8}
+        scrollEventThrottle={1}
         onScroll={scrollHandler}
         contentContainerStyle={styles.scrollView}
       >

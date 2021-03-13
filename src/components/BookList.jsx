@@ -92,7 +92,7 @@ function BookList({ books, title }) {
       <AnimatedFlatList
         horizontal
         onScroll={scrollHandler}
-        scrollEventThrottle={8}
+        scrollEventThrottle={1}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         data={books}

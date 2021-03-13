@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 
 import Text from './Text';
@@ -26,12 +26,10 @@ function ThemedButton({
   });
 
   return (
-    <Pressable onPress={onPress}>
-      <View style={[styles.button, style]}>
-        <Text bold size={16} style={[textStyle]}>
-          {children}
-        </Text>
-      </View>
+    <Pressable onPress={onPress} style={[styles.button, style]}>
+      <Text bold size={16} style={[textStyle]}>
+        {children}
+      </Text>
     </Pressable>
   );
 }

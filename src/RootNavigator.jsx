@@ -77,7 +77,6 @@ function RootNavigator() {
           animation: 'fade',
         }] : [])}
         options={{
-          gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,
           transitionSpec: {
             open: searchTranstion,

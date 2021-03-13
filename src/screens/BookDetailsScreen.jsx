@@ -50,10 +50,11 @@ function BookDetailsScreen({ navigation, route }) {
   const loaded = useSharedValue(0);
   const y = useSharedValue(0);
   const x = useSharedValue(0);
-  const closing = useSharedValue(0);
+  const moved = useSharedValue(0);
+  const closing = useSharedValue(0.9);
   const scrollY = useSharedValue(0);
   const {
-    margin, width, dark, colors, normalize, status,
+    margin, width, dark, colors, normalize, status, ios,
   } = useTheme();
   const HEADER = normalize(width + status, 500) + margin;
 
@@ -83,25 +84,27 @@ function BookDetailsScreen({ navigation, route }) {
   // Pan gesture handler
   const gestureHandler = useAnimatedGestureHandler({
     onStart: (_, ctx) => {
+      ctx.moved = moved.value;
       ctx.startX = x.value;
       ctx.startY = y.value;
     },
     onActive: (e, ctx) => {
-      ctx.moved = Math.max(ctx.startY + e.translationY, ctx.startX + e.translationX);
+      moved.value = ctx.moved + Math.max(e.translationY, e.translationX);
       ctx.velocity = Math.max(e.velocityX, e.velocityY);
       y.value = ctx.startY + e.translationY;
       x.value = ctx.startX + e.translationX;
 
       // closing screen? do it!
-      if ((ctx.moved >= 75 || ctx.velocity >= 750) && !closing.value) {
-        closing.value = 1;
-        runOnJS(goBack)();
+      if ((moved.value >= 75 || ctx.velocity >= 750)) {
+        if (closing.value === 0.9) runOnJS(goBack)();
+        closing.value = withTiming(0.25);
       }
     },
     onEnd: (e, ctx) => {
-      if (ctx.moved < 75 && ctx.velocity < 750) {
+      if (moved.value < 75 && ctx.velocity < 750) {
         y.value = withTiming(0);
         x.value = withTiming(0);
+        moved.value = withTiming(0);
       }
     },
   });
@@ -147,20 +150,19 @@ function BookDetailsScreen({ navigation, route }) {
   const anims = {
     screen: useAnimatedStyle(() => ({
       flex: 1,
-      shadowRadius: 10,
-      shadowOpacity: 0.5,
-      shadowOffset: { height: 5 },
+      opacity: withTiming(closing.value < 0.9 ? 0 : 1),
+      overflow: 'hidden',
       transform: [
         { translateX: x.value },
         { translateY: y.value },
-        { scale: interpolate(Math.max(y.value, x.value), [0, 75], [1, 0.9], 'clamp') },
+        { scale: closing.value < 0.9 ? closing.value : interpolate(moved.value, [0, 75], [1, 0.9], 'clamp') },
       ],
+      borderRadius: interpolate(moved.value, [0, 10], [0, 30], 'clamp'),
     })),
-    scrollView: useAnimatedStyle(() => ({
+    scrollView: {
       flex: 1,
       backgroundColor: colors.background,
-      borderRadius: interpolate(Math.max(y.value, x.value), [0, 10], [0, 40], 'clamp'),
-    })),
+    },
     details: useAnimatedStyle(() => ({
       opacity: loaded.value,
       transform: [
@@ -254,7 +256,7 @@ function BookDetailsScreen({ navigation, route }) {
         onHandlerStateChange={gestureHandler}
       >
         <Animated.View style={anims.screen}>
-          <StatusBar hidden={useIsFocused()} animated />
+          {ios && <StatusBar hidden={useIsFocused()} animated />}
           <BookHeader scrollY={scrollY} book={book} />
           <AntDesign size={27} name="close" onPress={goBack} style={styles.closeIcon} />
 
@@ -262,7 +264,7 @@ function BookDetailsScreen({ navigation, route }) {
             <AnimatedScrollView
               waitFor={enabled ? panRef : undefined}
               onScroll={scrollHandler}
-              scrollEventThrottle={8}
+              scrollEventThrottle={1}
               contentContainerStyle={styles.scrollContainer}
             >
               <View style={styles.detailsBox}>

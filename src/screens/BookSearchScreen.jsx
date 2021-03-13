@@ -172,7 +172,7 @@ function BookSearchScreen({ navigation }) {
 
       <Animated.ScrollView
         onScroll={scrollHandler}
-        scrollEventThrottle={8}
+        scrollEventThrottle={1}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContainer}

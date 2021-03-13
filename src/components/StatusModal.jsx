@@ -27,7 +27,8 @@ export function ModalProvider({ children }) {
     },
     content: {
       padding: margin,
-      borderRadius: 25,
+      borderTopLeftRadius: 25,
+      borderTopRightRadius: 25,
       paddingBottom: status,
       backgroundColor: colors.card,
     },

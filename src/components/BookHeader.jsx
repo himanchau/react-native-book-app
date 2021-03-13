@@ -25,8 +25,6 @@ function BookHeader({ scrollY, book }) {
       paddingTop: status,
       position: 'absolute',
       justifyContent: 'center',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
       shadowOffset: { height: 2 },
       backgroundColor: colors.card,
       shadowOpacity: interpolate(scrollY.value, [HEADER - navbar - 20, HEADER - navbar], [0, 0.25], 'clamp'),
@@ -41,8 +39,6 @@ function BookHeader({ scrollY, book }) {
       bottom: 0,
       opacity: 0.5,
       position: 'absolute',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
     })),
     cover: useAnimatedStyle(() => ({
       alignItems: 'center',
@@ -75,6 +71,7 @@ function BookHeader({ scrollY, book }) {
   const styles = StyleSheet.create({
     imgBox: {
       borderRadius: 10,
+      elevation: 6,
       shadowRadius: 6,
       shadowOpacity: 0.3,
       shadowOffset: { width: 0, height: 6 },

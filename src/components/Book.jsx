@@ -47,6 +47,7 @@ function Book({ book, scrollX, index }) {
     imgBox: {
       marginRight: margin,
       borderRadius: 10,
+      elevation: 6,
       shadowRadius: 6,
       shadowOpacity: 0.3,
       shadowOffset: { width: 0, height: 6 },
