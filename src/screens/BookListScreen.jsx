@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 
 import Text from '../components/Text';
 import BookList from '../components/BookList';
-import { useBookStore } from '../BookStore';
+import { useBooksState } from '../BookStore';
 
 const studies = require('../anims/landscape.json');
 
@@ -38,7 +38,7 @@ function BookListScreen({ navigation }) {
   const HEADER = normalize(300, 400);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
-  const [books] = useBookStore();
+  const books = useBooksState();
 
   // fade in screen, slowly if light mode is on
   const onLayout = () => {

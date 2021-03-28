@@ -18,8 +18,8 @@ import Text from '../components/Text';
 import List from '../components/BookList';
 import Button from '../components/Button';
 import BookHeader from '../components/BookHeader';
-import { useBookStore } from '../BookStore';
-import { useModal } from '../components/StatusModal';
+import { useBooksState } from '../BookStore';
+import { useModalDispatch } from '../components/StatusModal';
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -40,8 +40,8 @@ const getIcon = (stat) => {
 // Default screen
 function BookDetailsScreen({ navigation, route }) {
   const { book } = route.params;
-  const { setModalBook } = useModal();
-  const [bookList] = useBookStore();
+  const setModal = useModalDispatch();
+  const bookList = useBooksState();
   const [related, setRelated] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
@@ -67,7 +67,9 @@ function BookDetailsScreen({ navigation, route }) {
   // open book lists sheet
   const openSheet = () => {
     Haptics.selectionAsync();
-    setModalBook(book);
+    setModal((draft) => {
+      draft.book = book;
+    });
   };
 
   // Scroll handler

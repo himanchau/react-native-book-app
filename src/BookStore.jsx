@@ -1,94 +1,74 @@
-import React, { useEffect, useReducer, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import create from 'zustand';
+import produce from 'immer';
 
-// context for gloabal book list
-const StateContext = React.createContext();
-const DispatchContext = React.createContext();
+// create store using zustant & immer
+const useStore = create((set) => ({
+  books: null,
+  set: (fn) => set(produce(fn)),
+}));
 
-// load books from async storage
-async function loadBooks(dispatch) {
+// load books from async storage once
+async function loadBooks(set) {
   const json = await AsyncStorage.getItem('@lists');
   const data = json ? JSON.parse(json) : [];
-  dispatch({ type: 'SET_BOOKS', payload: data });
+  set((draft) => {
+    draft.books = data;
+  });
 }
 
 // save books to async storage
-async function saveBooks(state) {
-  AsyncStorage.setItem('@lists', JSON.stringify(state));
+async function saveBooks(books) {
+  AsyncStorage.setItem('@lists', JSON.stringify(books));
 }
 
-// reducer for state
-function reducer(state, { type, payload }) {
-  let newState = [];
-  let index = -1;
+// instantiate selectors for perf
+const stateSelector = (state) => state.books;
+const setSelector = (state) => state.set;
 
-  // update books state
-  switch (type) {
-    case 'SET_BOOKS':
-      newState = payload;
-      break;
-    case 'ADD_BOOK':
-      newState = [{
-        ...payload.book,
-        status: payload.list,
-        addedOn: Date.now(),
-      }, ...state];
-      break;
-    case 'UPDATE_BOOK':
-      index = state.findIndex((b) => b.bookId === payload.book.bookId);
-      state.splice(index, 1);
-      newState = [{
-        ...payload.book,
-        status: payload.list,
-      }, ...state];
-      break;
-    case 'REMOVE_BOOK':
-      index = state.findIndex((b) => b.bookId === payload.book.bookId);
-      state.splice(index, 1);
-      newState = [...state];
-      break;
-    default:
-      throw new Error('Invalid action!');
-  }
+// export store with books
+export const useBooksState = () => {
+  const books = useStore(stateSelector);
+  const set = useStore(setSelector);
 
-  // save to store & return
-  saveBooks(newState);
-  return newState;
-}
+  // load from async store
+  if (!books) loadBooks(set);
 
-// context provider with default state
-export function BooksProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, []);
+  return books || [];
+};
 
-  // load books on initialize
-  useEffect(() => {
-    loadBooks(dispatch);
-  }, []);
+// books state updater
+export const useBooksDispatch = () => {
+  const set = useStore(setSelector);
 
-  return (
-    <StateContext.Provider value={state}>
-      <DispatchContext.Provider value={dispatch}>
-        {children}
-      </DispatchContext.Provider>
-    </StateContext.Provider>
-  );
-}
+  // add book
+  const addBook = (book, status) => {
+    set((draft) => {
+      draft.books.unshift({ ...book, status });
+      saveBooks(draft.books);
+    });
+  };
 
-// state consumer hook
-export function useBookState() {
-  const context = useContext(StateContext);
-  if (context === undefined) throw new Error('useBookState must be used within a Provider');
-  return context;
-}
+  // update book
+  const updateBook = (book, status) => {
+    set((draft) => {
+      const index = draft.books.findIndex((b) => b.bookId === book.bookId);
+      if (index !== -1) draft.books[index].status = status;
+    });
+  };
 
-// state dispatcher hook
-export function useBookDispatch() {
-  const context = useContext(DispatchContext);
-  if (context === undefined) throw new Error('useBookDispatch must be used within a Provider');
-  return context;
-}
+  // remove book
+  const removeBook = (book) => {
+    set((draft) => {
+      const index = draft.books.findIndex((b) => b.bookId === book.bookId);
+      if (index !== -1) draft.books.splice(index, 1);
+      saveBooks(draft.books);
+    });
+  };
 
-// combine as [state, dispatch]
-export function useBookStore() {
-  return [useBookState(), useBookDispatch()];
-}
+  return {
+    addBook,
+    updateBook,
+    removeBook,
+  };
+};

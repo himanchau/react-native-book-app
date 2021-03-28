@@ -1,22 +1,32 @@
-import React, {
-  useEffect, useRef, useState, useContext,
-} from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { Modalize } from 'react-native-modalize';
 import * as Haptics from 'expo-haptics';
+import create from 'zustand';
+import produce from 'immer';
 
 import Text from './Text';
-import { useBookStore } from '../BookStore';
+import { useBooksState, useBooksDispatch } from '../BookStore';
 
-const ModalContext = React.createContext();
+// create store using zustant & immer
+const useStore = create((set) => ({
+  book: null,
+  set: (fn) => set(produce(fn)),
+}));
+
+// instantiate selectors for perf
+const stateSelector = (state) => state.book;
+const setSelector = (state) => state.set;
 
 // book modal using modalize
-export function ModalProvider({ children }) {
+export default function StatusModal() {
   const { colors, margin, status } = useTheme();
-  const [books, dispatch] = useBookStore();
-  const [book, setBook] = useState(null);
+  const book = useStore(stateSelector);
+  const set = useStore(setSelector);
+  const books = useBooksState();
+  const { addBook, updateBook, removeBook } = useBooksDispatch();
   const ref = useRef();
 
   // modal styles
@@ -60,18 +70,20 @@ export function ModalProvider({ children }) {
 
   // reset state on close
   const onClosed = () => {
-    setBook(null);
+    set((draft) => {
+      draft.book = null;
+    });
   };
 
   // find book to update or remove from list
   const updateList = (list) => {
     const index = books.findIndex((b) => b.bookId === book.bookId);
     if (index === -1) {
-      dispatch({ type: 'ADD_BOOK', payload: { book, list } });
+      addBook(book, list);
     } else if (list === 'Remove') {
-      dispatch({ type: 'REMOVE_BOOK', payload: { book, list } });
+      removeBook(book);
     } else {
-      dispatch({ type: 'UPDATE_BOOK', payload: { book, list } });
+      updateBook(book, list);
     }
     closeSheet();
   };
@@ -88,58 +100,48 @@ export function ModalProvider({ children }) {
   if (!item) item = book;
 
   return (
-    <ModalContext.Provider value={[book, setBook]}>
-      {children}
-      <Modalize
-        ref={ref}
-        threshold={50}
-        onClosed={onClosed}
-        modalStyle={styles.modal}
-        adjustToContentHeight
-      >
-        <View style={styles.content}>
-          <View style={[styles.flexRow]}>
-            <Text bold size={20}>
-              {item?.status ? 'Update List' : 'Add to List'}
-            </Text>
-            <Text bold onPress={closeSheet}>Done</Text>
-          </View>
-          <Text numberOfLines={1} style={[styles.bookTitle, styles.marginB]}>
-            {item?.bookTitleBare}
+    <Modalize
+      ref={ref}
+      threshold={50}
+      onClosed={onClosed}
+      modalStyle={styles.modal}
+      adjustToContentHeight
+    >
+      <View style={styles.content}>
+        <View style={[styles.flexRow]}>
+          <Text bold size={20}>
+            {item?.status ? 'Update List' : 'Add to List'}
           </Text>
-          <Pressable onPress={() => updateList('Reading')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign name="rocket1" style={styles.iconLeft} />
-            <Text size={17} style={styles.statusText}>Reading</Text>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Reading' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => updateList('Completed')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign name="Trophy" style={styles.iconLeft} />
-            <Text size={17} style={styles.statusText}>Completed</Text>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Completed' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => updateList('Wishlist')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign name="book" style={styles.iconLeft} />
-            <Text size={17} style={styles.statusText}>Wishlist</Text>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Wishlist' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => updateList('Remove')}>
-            <Text center size={16} color="#ff3b30">Remove</Text>
-          </Pressable>
+          <Text bold onPress={closeSheet}>Done</Text>
         </View>
-      </Modalize>
-    </ModalContext.Provider>
+        <Text numberOfLines={1} style={[styles.bookTitle, styles.marginB]}>
+          {item?.bookTitleBare}
+        </Text>
+        <Pressable onPress={() => updateList('Reading')} style={[styles.flexRow, styles.marginB]}>
+          <AntDesign name="rocket1" style={styles.iconLeft} />
+          <Text size={17} style={styles.statusText}>Reading</Text>
+          <AntDesign size={21} color={colors.text} name={item?.status === 'Reading' ? 'check' : ''} />
+        </Pressable>
+        <Pressable onPress={() => updateList('Completed')} style={[styles.flexRow, styles.marginB]}>
+          <AntDesign name="Trophy" style={styles.iconLeft} />
+          <Text size={17} style={styles.statusText}>Completed</Text>
+          <AntDesign size={21} color={colors.text} name={item?.status === 'Completed' ? 'check' : ''} />
+        </Pressable>
+        <Pressable onPress={() => updateList('Wishlist')} style={[styles.flexRow, styles.marginB]}>
+          <AntDesign name="book" style={styles.iconLeft} />
+          <Text size={17} style={styles.statusText}>Wishlist</Text>
+          <AntDesign size={21} color={colors.text} name={item?.status === 'Wishlist' ? 'check' : ''} />
+        </Pressable>
+        <Pressable onPress={() => updateList('Remove')}>
+          <Text center size={16} color="#ff3b30">Remove</Text>
+        </Pressable>
+      </View>
+    </Modalize>
   );
 }
 
-// export as modal hook
-export function useModal() {
-  const context = useContext(ModalContext);
-  if (context === undefined) throw new Error('Modal provider not found!');
+// export state
+export const useModalState = () => useStore(stateSelector);
 
-  const [modalBook, setModalBook] = context;
-
-  return {
-    modalBook,
-    setModalBook,
-  };
-}
+// export dispatch
+export const useModalDispatch = () => useStore(setSelector);

@@ -19,6 +19,7 @@
     "expo-haptics": "^8.4.0",
     "expo-status-bar": "~1.0.3",
     "fast-xml-parser": "^3.17.6",
+    "immer": "^9.0.1",
     "lottie-react-native": "~2.6.1",
     "react": "16.13.1",
     "react-dom": "16.13.1",
@@ -31,7 +32,8 @@
     "react-native-screens": "~2.15.0",
     "react-native-shared-element": "^0.7.0",
     "react-native-web": "~0.13.12",
-    "react-navigation-shared-element": "3.0.0"
+    "react-navigation-shared-element": "3.0.0",
+    "zustand": "^3.3.3"
   },
   "devDependencies": {
     "@babel/core": "~7.9.0",
@@ -40,7 +42,9 @@
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-jsx-a11y": "^6.3.1",
     "eslint-plugin-react": "^7.21.2",
-    "eslint-plugin-react-hooks": "^4.1.2"
+    "eslint-plugin-react-hooks": "^4.1.2",
+    "react-navigation": "4.3.7",
+    "react-navigation-stack": "2.3.11"
   },
   "private": true
 }

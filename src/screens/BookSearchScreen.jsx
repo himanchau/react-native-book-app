@@ -12,8 +12,8 @@ import axios from 'axios';
 
 import Text from '../components/Text';
 import Book from '../components/SearchBook';
-import { useBookStore } from '../BookStore';
-import { useModal } from '../components/StatusModal';
+import { useBooksState } from '../BookStore';
+import { useModalDispatch } from '../components/StatusModal';
 
 const bookImg = require('../images/books.png');
 
@@ -22,8 +22,8 @@ function BookSearchScreen({ navigation }) {
   const {
     colors, height, margin, status,
   } = useTheme();
-  const { setModalBook } = useModal();
-  const [bookList] = useBookStore();
+  const setModal = useModalDispatch();
+  const bookList = useBooksState();
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
   const scrollY = useSharedValue(0);
@@ -55,7 +55,9 @@ function BookSearchScreen({ navigation }) {
 
   // edit selected book
   const editStatus = (book) => {
-    setModalBook(book);
+    setModal((draft) => {
+      draft.book = book;
+    });
     Keyboard.dismiss();
     Haptics.selectionAsync();
   };
