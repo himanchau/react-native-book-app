@@ -38,7 +38,7 @@ function BookListScreen({ navigation }) {
   const HEADER = normalize(300, 400);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
-  const books = useBooksState();
+  const { books } = useBooksState();
 
   // fade in screen, slowly if light mode is on
   const onLayout = () => {

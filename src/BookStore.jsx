@@ -1,74 +1,41 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import create from 'zustand';
-import produce from 'immer';
+import { proxy, useSnapshot } from 'valtio';
 
-// create store using zustant & immer
-const useStore = create((set) => ({
-  books: null,
-  set: (fn) => set(produce(fn)),
-}));
+// global state
+const state = proxy({
+  books: [],
+});
 
 // load books from async storage once
-async function loadBooks(set) {
+async function loadBooks() {
   const json = await AsyncStorage.getItem('@lists');
   const data = json ? JSON.parse(json) : [];
-  set((draft) => {
-    draft.books = data;
-  });
+  state.books = data;
 }
+loadBooks();
 
 // save books to async storage
-async function saveBooks(books) {
-  AsyncStorage.setItem('@lists', JSON.stringify(books));
+async function saveBooks() {
+  AsyncStorage.setItem('@lists', JSON.stringify(state.books));
 }
 
-// instantiate selectors for perf
-const stateSelector = (state) => state.books;
-const setSelector = (state) => state.set;
+// export fruit state as snapshot
+export const useBooksState = () => useSnapshot(state);
 
-// export store with books
-export const useBooksState = () => {
-  const books = useStore(stateSelector);
-  const set = useStore(setSelector);
-
-  // load from async store
-  if (!books) loadBooks(set);
-
-  return books || [];
-};
-
-// books state updater
-export const useBooksDispatch = () => {
-  const set = useStore(setSelector);
-
-  // add book
-  const addBook = (book, status) => {
-    set((draft) => {
-      draft.books.unshift({ ...book, status });
-      saveBooks(draft.books);
-    });
-  };
-
-  // update book
-  const updateBook = (book, status) => {
-    set((draft) => {
-      const index = draft.books.findIndex((b) => b.bookId === book.bookId);
-      if (index !== -1) draft.books[index].status = status;
-    });
-  };
-
-  // remove book
-  const removeBook = (book) => {
-    set((draft) => {
-      const index = draft.books.findIndex((b) => b.bookId === book.bookId);
-      if (index !== -1) draft.books.splice(index, 1);
-      saveBooks(draft.books);
-    });
-  };
-
-  return {
-    addBook,
-    updateBook,
-    removeBook,
-  };
-};
+// export functions to update state
+export const setBookState = () => ({
+  addBook: (book, status) => {
+    state.books.unshift({ ...book, status });
+    saveBooks();
+  },
+  updateBook: (book, status) => {
+    const index = state.books.findIndex((b) => b.bookId === book.bookId);
+    if (index !== -1) state.books[index].status = status;
+    saveBooks();
+  },
+  removeBook: (book) => {
+    const index = state.books.findIndex((b) => b.bookId === book.bookId);
+    if (index !== -1) state.books.splice(index, 1);
+    saveBooks();
+  },
+});

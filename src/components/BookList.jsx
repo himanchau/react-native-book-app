@@ -9,14 +9,13 @@ import * as Haptics from 'expo-haptics';
 
 import Text from './Text';
 import Book from './Book';
-import { useModalDispatch } from './StatusModal';
+import { setModal } from './StatusModal';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // horizontal flatlist of books
 function BookList({ books, title }) {
   const { width, margin, colors } = useTheme();
-  const setModal = useModalDispatch();
   const navigation = useNavigation();
   const scrollX = useSharedValue(0);
 
@@ -41,9 +40,7 @@ function BookList({ books, title }) {
   // change book status
   const changeStatus = (book) => {
     Haptics.selectionAsync();
-    setModal((draft) => {
-      draft.book = book;
-    });
+    setModal(book);
   };
 
   // all styles

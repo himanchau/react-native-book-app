@@ -4,29 +4,22 @@ import { useTheme } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { Modalize } from 'react-native-modalize';
 import * as Haptics from 'expo-haptics';
-import create from 'zustand';
-import produce from 'immer';
+import { proxy, useSnapshot } from 'valtio';
 
 import Text from './Text';
-import { useBooksState, useBooksDispatch } from '../BookStore';
+import { useBooksState, setBookState } from '../BookStore';
 
 // create store using zustant & immer
-const useStore = create((set) => ({
+const state = proxy({
   book: null,
-  set: (fn) => set(produce(fn)),
-}));
-
-// instantiate selectors for perf
-const stateSelector = (state) => state.book;
-const setSelector = (state) => state.set;
+});
 
 // book modal using modalize
 export default function StatusModal() {
   const { colors, margin, status } = useTheme();
-  const book = useStore(stateSelector);
-  const set = useStore(setSelector);
-  const books = useBooksState();
-  const { addBook, updateBook, removeBook } = useBooksDispatch();
+  const { book } = useSnapshot(state);
+  const { books } = useBooksState();
+  const { addBook, updateBook, removeBook } = setBookState();
   const ref = useRef();
 
   // modal styles
@@ -70,9 +63,7 @@ export default function StatusModal() {
 
   // reset state on close
   const onClosed = () => {
-    set((draft) => {
-      draft.book = null;
-    });
+    state.book = null;
   };
 
   // find book to update or remove from list
@@ -140,8 +131,7 @@ export default function StatusModal() {
   );
 }
 
-// export state
-export const useModalState = () => useStore(stateSelector);
-
 // export dispatch
-export const useModalDispatch = () => useStore(setSelector);
+export const setModal = (book) => {
+  state.book = book;
+};
