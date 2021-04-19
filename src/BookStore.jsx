@@ -30,7 +30,7 @@ export const setBookState = () => ({
   },
   updateBook: (book, status) => {
     const index = state.books.findIndex((b) => b.bookId === book.bookId);
-    if (index !== -1) state.books[index].status = status;
+    if (index !== -1) state.books[index] = { ...book, status };
     saveBooks();
   },
   removeBook: (book) => {

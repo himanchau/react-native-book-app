@@ -14,7 +14,11 @@ export default function getTheme(scheme) {
     ios: Platform.OS === 'ios',
     margin: normalize(20, 35),
     colors: {
+      white: '#ffffff',
       primary: '#ff6b6b',
+      success: '#20bf6b',
+      warning: '#f39c12',
+      error: '#e74c3c',
       text: dark ? '#f2f2f2' : '#1a1a1a',
       card: dark ? '#000000' : '#ffffff',
       background: dark ? '#1a1a1a' : '#f2f2f2',
