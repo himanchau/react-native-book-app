@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { proxy, useSnapshot } from 'valtio';
 
 import Text from './Text';
-import { showMessage } from './Toast';
+import { useToast } from './Toast';
 import { useBooksState, setBookState } from '../BookStore';
 
 // create store using zustant & immer
@@ -17,6 +17,7 @@ const state = proxy({
 
 // book modal using modalize
 export default function StatusModal() {
+  const toast = useToast();
   const { colors, margin, status } = useTheme();
   const { book } = useSnapshot(state);
   const { books } = useBooksState();
@@ -72,13 +73,13 @@ export default function StatusModal() {
     const index = books.findIndex((b) => b.bookId === book.bookId);
     if (index === -1) {
       addBook(book, list);
-      showMessage(`Book added to ${list}!`);
+      toast.show(`Book added to ${list}!`);
     } else if (list === 'Remove') {
       removeBook(book);
-      showMessage('Book removed!');
+      toast.show('Book removed!');
     } else {
       updateBook(book, list);
-      showMessage(`Book moved to ${list}!`);
+      toast.show(`Book moved to ${list}!`);
     }
     closeSheet();
   };

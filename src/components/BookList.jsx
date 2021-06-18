@@ -5,11 +5,9 @@ import {
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useTheme, useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 import Text from './Text';
 import Book from './Book';
-import { setModal } from './StatusModal';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
@@ -29,18 +27,6 @@ function BookList({ books, title }) {
   // go to search screen
   const searchScreen = () => {
     navigation.push('BookSearch');
-  };
-
-  // book details screen
-  const bookDetails = (book) => {
-    Haptics.selectionAsync();
-    navigation.push('BookDetails', { book });
-  };
-
-  // change book status
-  const changeStatus = (book) => {
-    Haptics.selectionAsync();
-    setModal(book);
   };
 
   // all styles
@@ -97,7 +83,7 @@ function BookList({ books, title }) {
         data={books}
         keyExtractor={(i) => i.bookId}
         renderItem={({ item, index }) => (
-          <Pressable onLongPress={() => changeStatus(item)} onPress={() => bookDetails(item)}>
+          <Pressable>
             <Book book={item} index={index} scrollX={scrollX} />
           </Pressable>
         )}

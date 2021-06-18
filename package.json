@@ -19,6 +19,7 @@
     "expo-haptics": "~10.0.0",
     "expo-status-bar": "~1.0.4",
     "fast-xml-parser": "^3.17.6",
+    "jotai": "^1.0.0",
     "lottie-react-native": "3.5.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",

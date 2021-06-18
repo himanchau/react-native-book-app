@@ -1,25 +1,27 @@
 import React, { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import { useTheme } from '@react-navigation/native';
-import { proxy, useSnapshot } from 'valtio';
 import Animated, {
   useAnimatedStyle, useSharedValue, withDelay, withTiming,
 } from 'react-native-reanimated';
+import { atom, useAtom } from 'jotai';
 
 import Text from './Text';
 
-// create store using zustant & immer
-const state = proxy({
+// default options
+const options = {
   message: null,
   type: 'success',
   time: 2000,
-});
+};
+
+// using jotai as test
+const state = atom(options);
 
 // global container for messages
 export default function ToastContainer() {
-  const { setBarStyle } = StatusBar;
-  const { message, time, type } = useSnapshot(state);
   const { colors, status } = useTheme();
+  const [toast, setToast] = useAtom(state);
   const height = status + 44;
   const show = useSharedValue(-height);
 
@@ -34,7 +36,7 @@ export default function ToastContainer() {
       paddingTop: status,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors[type],
+      backgroundColor: colors[toast.type],
       borderBottomLeftRadius: 10,
       borderBottomRightRadius: 10,
       transform: [
@@ -50,29 +52,35 @@ export default function ToastContainer() {
 
   // show/hide when message set
   useEffect(() => {
-    if (message) {
-      setBarStyle('light-content');
+    if (toast.message) {
+      StatusBar.setBarStyle('light-content');
       show.value = withTiming(0);
 
       // hide message after given time
-      show.value = withDelay(time, withTiming(-height));
+      show.value = withDelay(toast.time, withTiming(-height));
       setTimeout(() => {
-        state.message = null;
-        setBarStyle('default');
-      }, time + 300);
+        setToast(options);
+        StatusBar.setBarStyle('default');
+      }, toast.time + 300);
     }
-  }, [message]);
+  }, [toast.message]);
 
   return (
     <Animated.View style={styles.container}>
-      <Text style={styles.text}>{message}</Text>
+      <Text style={styles.text}>{toast.message}</Text>
     </Animated.View>
   );
 }
 
-// allow message to be shown
-export const showMessage = (message, options) => {
-  state.message = message;
-  state.type = options?.type || 'success';
-  state.time = options?.time || 2000;
+// export const useToast = () => useAtom(state);
+
+export const useToast = () => {
+  const [, setToast] = useAtom(state);
+  return {
+    show: (msg, opts) => setToast({
+      message: msg,
+      type: opts?.type || options.type,
+      time: opts?.time || options.time,
+    }),
+  };
 };
