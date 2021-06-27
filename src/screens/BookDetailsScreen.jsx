@@ -8,9 +8,7 @@ import Animated, {
   useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { PanGestureHandler, ScrollView } from 'react-native-gesture-handler';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, useIsFocused } from '@react-navigation/native';
-import { Modalize } from 'react-native-modalize';
 import { AntDesign } from '@expo/vector-icons';
 import { parse } from 'fast-xml-parser';
 import * as Haptics from 'expo-haptics';
@@ -20,6 +18,8 @@ import Text from '../components/Text';
 import List from '../components/BookList';
 import Button from '../components/Button';
 import BookHeader from '../components/BookHeader';
+import { useBooksState } from '../BookStore';
+import { setModal } from '../components/StatusModal';
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -38,42 +38,24 @@ const getIcon = (stat) => {
 };
 
 // Default screen
-function BookDetails({ navigation, route }) {
+function BookDetailsScreen({ navigation, route }) {
   const { book } = route.params;
+  const { books: bookList } = useBooksState();
   const [related, setRelated] = useState([]);
-  const [bookList, setBookList] = useState([]);
   const [fullBook, setFullBook] = useState(null);
   const [author, setAuthor] = useState(null);
   const [enabled, setEnabled] = useState(true);
   const panRef = useRef();
-  const sheetRef = useRef();
   const loaded = useSharedValue(0);
   const y = useSharedValue(0);
-  const closing = useSharedValue(0);
+  const x = useSharedValue(0);
+  const moved = useSharedValue(0);
+  const closing = useSharedValue(0.9);
   const scrollY = useSharedValue(0);
   const {
-    margin, width, dark, colors, normalize, status,
+    margin, width, dark, colors, normalize, status, ios,
   } = useTheme();
   const HEADER = normalize(width + status, 500) + margin;
-
-  // Save data to async storage
-  const saveData = async () => {
-    await AsyncStorage.setItem('@lists', JSON.stringify(bookList));
-  };
-
-  // Load data from async storage
-  const loadData = async () => {
-    const json = await AsyncStorage.getItem('@lists');
-    const data = json != null ? JSON.parse(json) : null;
-    setBookList(data || []);
-  };
-
-  // Save data on list change
-  useEffect(() => {
-    if (bookList.length) {
-      saveData();
-    }
-  }, [bookList]);
 
   // Go back to previous screen
   const goBack = () => {
@@ -81,45 +63,19 @@ function BookDetails({ navigation, route }) {
     Haptics.selectionAsync();
   };
 
-  // Open book lists sheet
+  // open book lists sheet
   const openSheet = () => {
     Haptics.selectionAsync();
-    sheetRef.current?.open();
-  };
-
-  // Close book list sheet
-  const closeSheet = () => {
-    Haptics.notificationAsync('success');
-    sheetRef.current?.close();
-  };
-
-  // Add book to list
-  const addBook = (list) => {
-    // Find book in list and update
-    const item = bookList.find((b) => b.bookId === book.bookId);
-    if (item) {
-      setBookList((arr) => {
-        arr.splice(bookList.indexOf(item), 1);
-        if (list === 'Remove') {
-          return [...arr];
-        }
-        return [{ ...item, status: list }, ...arr];
-      });
-    } else {
-      // Add to list with proper status
-      setBookList((arr) => [{ ...book, status: list }, ...arr]);
-    }
-
-    closeSheet();
+    setModal(book);
   };
 
   // Scroll handler
-  const scrollHandler = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-    if (event.contentOffset.y <= 0 && !enabled) {
+  const scrollHandler = useAnimatedScrollHandler(({ contentOffset }) => {
+    scrollY.value = contentOffset.y;
+    if (contentOffset.y <= 0 && !enabled) {
       runOnJS(setEnabled)(true);
     }
-    if (event.contentOffset.y > 0 && enabled) {
+    if (contentOffset.y > 0 && enabled) {
       runOnJS(setEnabled)(false);
     }
   });
@@ -127,29 +83,33 @@ function BookDetails({ navigation, route }) {
   // Pan gesture handler
   const gestureHandler = useAnimatedGestureHandler({
     onStart: (_, ctx) => {
+      ctx.moved = moved.value;
+      ctx.startX = x.value;
       ctx.startY = y.value;
     },
     onActive: (e, ctx) => {
-      const moved = ctx.startY + e.translationY;
-      y.value = moved > 0 ? moved : 0;
+      moved.value = ctx.moved + Math.max(e.translationY, e.translationX);
+      ctx.velocity = Math.max(e.velocityX, e.velocityY);
+      y.value = ctx.startY + e.translationY;
+      x.value = ctx.startX + e.translationX;
 
-      // See if closing screen
-      if ((y.value >= 75 || e.velocityY >= 500) && !closing.value) {
-        closing.value = 1;
-        runOnJS(goBack)();
+      // closing screen? do it!
+      if ((moved.value >= 75 || ctx.velocity >= 750)) {
+        if (closing.value === 0.9) runOnJS(goBack)();
+        closing.value = withTiming(0.25);
       }
     },
-    onEnd: (e) => {
-      if (y.value < 75 && e.velocityY < 500) {
+    onEnd: (e, ctx) => {
+      if (moved.value < 75 && ctx.velocity < 750) {
         y.value = withTiming(0);
+        x.value = withTiming(0);
+        moved.value = withTiming(0);
       }
     },
   });
 
   // Load book details
   useEffect(() => {
-    loadData();
-
     // Related Books
     axios.get(`https://www.goodreads.com/book/auto_complete?format=json&q=${book.author.name}`)
       .then((resp) => {
@@ -189,19 +149,19 @@ function BookDetails({ navigation, route }) {
   const anims = {
     screen: useAnimatedStyle(() => ({
       flex: 1,
-      shadowRadius: 10,
-      shadowOpacity: 0.5,
-      shadowOffset: { height: 5 },
+      opacity: withTiming(closing.value < 0.9 ? 0 : 1),
+      overflow: 'hidden',
       transform: [
+        { translateX: x.value },
         { translateY: y.value },
-        { scale: interpolate(y.value, [0, 75], [1, 0.90], 'clamp') },
+        { scale: closing.value < 0.9 ? closing.value : interpolate(moved.value, [0, 75], [1, 0.9], 'clamp') },
       ],
+      borderRadius: interpolate(moved.value, [0, 10], [0, 30], 'clamp'),
     })),
-    scrollView: useAnimatedStyle(() => ({
+    scrollView: {
       flex: 1,
-      borderRadius: 20,
       backgroundColor: colors.background,
-    })),
+    },
     details: useAnimatedStyle(() => ({
       opacity: loaded.value,
       transform: [
@@ -278,28 +238,6 @@ function BookDetails({ navigation, route }) {
     addIcon: {
       top: 3,
     },
-    modal: {
-      padding: margin,
-      borderRadius: 12,
-      paddingBottom: status,
-      backgroundColor: colors.card,
-    },
-    flexRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    marginB: {
-      marginBottom: margin,
-    },
-    iconBtn: {
-      padding: 0,
-      backgroundColor: colors.card,
-    },
-    iconLeft: {
-      fontSize: 21,
-      color: colors.text,
-      marginRight: margin,
-    },
   };
 
   // Find book in list
@@ -311,20 +249,21 @@ function BookDetails({ navigation, route }) {
       <PanGestureHandler
         ref={panRef}
         failOffsetY={-5}
+        failOffsetX={-5}
         activeOffsetY={5}
-        enabled={enabled}
-        onGestureEvent={gestureHandler}
+        activeOffsetX={25}
+        onHandlerStateChange={gestureHandler}
       >
         <Animated.View style={anims.screen}>
-          <StatusBar hidden={useIsFocused()} animated />
-          <BookHeader scrollY={scrollY} y={y} book={book} navigation={navigation} />
+          {ios && <StatusBar hidden={useIsFocused()} animated />}
+          <BookHeader scrollY={scrollY} book={book} />
           <AntDesign size={27} name="close" onPress={goBack} style={styles.closeIcon} />
 
           <Animated.View style={anims.scrollView}>
             <AnimatedScrollView
               waitFor={enabled ? panRef : undefined}
               onScroll={scrollHandler}
-              scrollEventThrottle={8}
+              scrollEventThrottle={1}
               contentContainerStyle={styles.scrollContainer}
             >
               <View style={styles.detailsBox}>
@@ -365,38 +304,8 @@ function BookDetails({ navigation, route }) {
           </Animated.View>
         </Animated.View>
       </PanGestureHandler>
-
-      <Modalize ref={sheetRef} threshold={50} adjustToContentHeight>
-        <View style={styles.modal}>
-          <View style={[styles.flexRow, styles.marginB]}>
-            <Text bold size={20}>Add To</Text>
-            <Text bold onPress={closeSheet}>Done</Text>
-          </View>
-          <Pressable onPress={() => addBook('Reading')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button onPress={() => addBook('Reading')} name="rocket1" style={styles.iconBtn} iconStyle={styles.iconLeft}>
-              <Text size={17}>Reading</Text>
-            </AntDesign.Button>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Reading' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => addBook('Completed')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button onPress={() => addBook('Completed')} name="Trophy" style={styles.iconBtn} iconStyle={styles.iconLeft}>
-              <Text size={17}>Completed</Text>
-            </AntDesign.Button>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Completed' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => addBook('Wishlist')} style={[styles.flexRow, styles.marginB]}>
-            <AntDesign.Button onPress={() => addBook('Wishlist')} name="book" style={styles.iconBtn} iconStyle={styles.iconLeft}>
-              <Text size={17}>Wishlist</Text>
-            </AntDesign.Button>
-            <AntDesign size={21} color={colors.text} name={item?.status === 'Wishlist' ? 'check' : ''} />
-          </Pressable>
-          <Pressable onPress={() => addBook('Remove')}>
-            <Text center size={16} color="#ff3b30">Remove</Text>
-          </Pressable>
-        </View>
-      </Modalize>
     </>
   );
 }
 
-export default React.memo(BookDetails);
+export default React.memo(BookDetailsScreen);

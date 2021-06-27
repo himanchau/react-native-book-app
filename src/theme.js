@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { useWindowDimensions } from 'react-native';
+import { useWindowDimensions, Platform } from 'react-native';
 
 /* Return the App Theme Object */
 export default function getTheme(scheme) {
@@ -11,15 +11,21 @@ export default function getTheme(scheme) {
     dark,
     width,
     height,
+    ios: Platform.OS === 'ios',
     margin: normalize(20, 35),
     colors: {
-      primary: '#16a085',
+      white: '#ffffff',
+      primary: '#ff6b6b',
+      success: '#20bf6b',
+      warning: '#f39c12',
+      error: '#e74c3c',
       text: dark ? '#f2f2f2' : '#1a1a1a',
       card: dark ? '#000000' : '#ffffff',
       background: dark ? '#1a1a1a' : '#f2f2f2',
       border: dark ? '#f2f2f2dd' : '#1a1a1add',
-      button: dark ? '#100f0add' : '#f6f5f0dd',
+      button: dark ? '#1a1a1add' : '#f2f2f2dd',
     },
+    font: Platform.OS === 'ios' ? 'Avenir Next' : 'Roboto',
     status: Constants.statusBarHeight,
     navbar: Constants.statusBarHeight + 44,
     normalize,

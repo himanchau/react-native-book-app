@@ -16,6 +16,30 @@ function RootNavigator() {
     },
   });
 
+  const bookTransition = {
+    animation: 'spring',
+    config: {
+      mass: 3,
+      damping: 300,
+      stiffness: 1000,
+      overshootClamping: false,
+      restDisplacementThreshold: 10,
+      restSpeedThreshold: 10,
+    },
+  };
+
+  const searchTranstion = {
+    animation: 'spring',
+    config: {
+      mass: 3,
+      damping: 300,
+      stiffness: 1000,
+      overshootClamping: false,
+      restDisplacementThreshold: 10,
+      restSpeedThreshold: 10,
+    },
+  };
+
   return (
     <BookStack.Navigator
       initialRouteName="BookList"
@@ -30,10 +54,19 @@ function RootNavigator() {
       <BookStack.Screen
         name="BookDetails"
         component={BookDetailsScreen}
-        sharedElements={(route, otherRoute) => (['BookList', 'BookSearch', 'BookDetails'].includes(otherRoute.name) ? [route.params.book.bookId] : [])}
+        sharedElements={(route, otherRoute) => {
+          if (['BookList', 'BookSearch'].includes(otherRoute.name)) {
+            return [route.params.book.bookId];
+          }
+          return [];
+        }}
         options={{
           gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,
+          transitionSpec: {
+            open: bookTransition,
+            close: bookTransition,
+          },
         }}
       />
       <BookStack.Screen
@@ -44,12 +77,15 @@ function RootNavigator() {
           animation: 'fade',
         }] : [])}
         options={{
-          gestureEnabled: false,
           cardStyleInterpolator: fadeScreen,
+          transitionSpec: {
+            open: searchTranstion,
+            close: searchTranstion,
+          },
         }}
       />
     </BookStack.Navigator>
   );
 }
 
-export default RootNavigator;
+export default React.memo(RootNavigator);

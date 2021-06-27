@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
-  interpolate, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
+  interpolate, withTiming,
+  useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, useAnimatedProps,
 } from 'react-native-reanimated';
-import { useTheme, useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@react-navigation/native';
 import { SharedElement } from 'react-navigation-shared-element';
 import { AntDesign } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Text from '../components/Text';
-import List from '../components/BookList';
+import BookList from '../components/BookList';
+import { useBooksState } from '../BookStore';
 
 const studies = require('../anims/landscape.json');
 
@@ -29,93 +30,56 @@ const getGreeting = () => {
   return 'Good Evening';
 };
 
-// Default screen
-function BookList({ navigation }) {
+// home screen
+function BookListScreen({ navigation }) {
   const {
-    dark, width, colors, margin, navbar, normalize,
+    dark, width, colors, margin, navbar, normalize, ios,
   } = useTheme();
   const HEADER = normalize(300, 400);
-  const [reading, setReading] = useState([]);
-  const [completed, setCompleted] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [bookList, setBookList] = useState([]);
   const scrollY = useSharedValue(0);
   const loaded = useSharedValue(0);
+  const { books } = useBooksState();
 
-  // Scrollview handler
+  // fade in screen, slowly if light mode is on
+  const onLayout = () => {
+    loaded.value = withTiming(1, { duration: dark ? 300 : 600 });
+  };
+
+  // scrollview handler
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: ({ contentOffset }) => {
       scrollY.value = contentOffset.y;
     },
   });
 
-  // Load data from async storage
-  const loadData = async () => {
-    const json = await AsyncStorage.getItem('@lists');
-    const data = json ? JSON.parse(json) : [];
-    setBookList(data);
-  };
-
-  // Go to search screen
+  // go to search screen
   const searchBooks = () => {
     Haptics.selectionAsync();
-    navigation.push('BookSearch', { bookList });
+    navigation.push('BookSearch', { bookList: books });
   };
 
-  // Reload books when focused
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!loaded.value) {
-        loadData();
-        loaded.value = 1;
-      } else {
-        setTimeout(loadData, 450);
-      }
-    }, []),
-  );
-
-  // Process and save list
-  useEffect(() => {
-    if (bookList.length) {
-      const [rList, cList, wList] = [[], [], []];
-      bookList.forEach((bk) => {
-        switch (bk.status) {
-          case 'Wishlist':
-            wList.push(bk);
-            break;
-          case 'Completed':
-            cList.push(bk);
-            break;
-          default:
-            rList.push(bk);
-        }
-        setReading(rList);
-        setCompleted(cList);
-        setWishlist(wList);
-      });
-    }
-  }, [bookList]);
-
-  // Styles
+  // all the styles
   const styles = {
-    screen: {
+    screen: useAnimatedStyle(() => ({
       flex: 1,
-      backgroundColor: colors.background,
-    },
+      opacity: loaded.value,
+      backgroundColor: colors.card,
+    })),
     header: useAnimatedStyle(() => ({
       top: 0,
       left: 0,
       right: 0,
       zIndex: 10,
-      height: HEADER,
+      height: interpolate(scrollY.value, [-300, 0], [HEADER + 300, HEADER], 'clamp'),
       paddingTop: navbar,
-      shadowRadius: 4,
       position: 'absolute',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      shadowOffset: { height: 2, width: 0 },
+      elevation: ios ? undefined : interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 10], 'clamp'),
+      shadowRadius: ios ? 4 : undefined,
+      shadowOffset: ios ? { height: 2, width: 0 } : undefined,
+      shadowOpacity: ios ? interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp') : undefined,
       backgroundColor: colors.background,
-      shadowOpacity: interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp'),
       transform: [
         { translateY: interpolate(scrollY.value, [0, HEADER - navbar], [0, -HEADER + navbar], 'clamp') },
       ],
@@ -123,26 +87,17 @@ function BookList({ navigation }) {
     logo: useAnimatedStyle(() => ({
       opacity: interpolate(scrollY.value, [0, HEADER - 100], [1, 0], 'clamp'),
       transform: [
-        { translateY: interpolate(scrollY.value, [-200, 0], [50, 0], 'clamp') },
+        { translateY: interpolate(scrollY.value, [-300, 0], [-150, 0], 'clamp') },
       ],
     })),
     lottie: {
-      alignSelf: 'center',
-      height: '110%',
-      marginLeft: 10,
+      top: 5,
+      height: '100%',
       opacity: dark ? 0.8 : 1,
     },
     lottieProps: useAnimatedProps(() => ({
       speed: 0.5,
       autoPlay: true,
-      // progress: scrollY.value
-      //   ? interpolate(scrollY.value, [-200, 0, 200], [0, 0.5, 1], 'clamp')
-      //   : withTiming(1, { duration: 5000 }),
-    })),
-    welcome: useAnimatedStyle(() => ({
-      transform: [
-        { translateY: interpolate(scrollY.value, [-200, 0], [200, 0], 'clamp') },
-      ],
     })),
     welcomeText: useAnimatedStyle(() => ({
       transform: [
@@ -163,7 +118,7 @@ function BookList({ navigation }) {
       borderColor: colors.background,
     },
     searchIcon: {
-      marginRight: 10,
+      width: 30,
     },
     searchText: {
       opacity: 0.3,
@@ -173,9 +128,14 @@ function BookList({ navigation }) {
     },
   };
 
-  // Render all the lists
+  // filter books into their categories
+  const reading = books.filter((b) => b.status === 'Reading');
+  const completed = books.filter((b) => b.status === 'Completed');
+  const wishlist = books.filter((b) => b.status === 'Wishlist');
+
+  // render all the lists
   return (
-    <View style={styles.screen}>
+    <Animated.View onLayout={onLayout} style={styles.screen}>
       <Animated.View style={styles.header}>
         <Animated.View style={styles.logo}>
           <LottieViewAnimated
@@ -184,34 +144,32 @@ function BookList({ navigation }) {
             animatedProps={styles.lottieProps}
           />
         </Animated.View>
-        <Animated.View style={styles.welcome}>
-          <Text animated style={styles.welcomeText} center size={20}>
-            {getGreeting()}
-          </Text>
-          <SharedElement id="search">
-            <Pressable onPress={searchBooks} style={styles.searchInput}>
-              <Text size={15} style={styles.searchText}>
-                <View style={styles.searchIcon}>
-                  <AntDesign color={colors.text} name="search1" size={15} />
-                </View>
-                Find your next book...
-              </Text>
-            </Pressable>
-          </SharedElement>
-        </Animated.View>
+        <Text animated style={styles.welcomeText} center size={20}>
+          {getGreeting()}
+        </Text>
+        <SharedElement id="search">
+          <Pressable onPress={searchBooks} style={styles.searchInput}>
+            <Text size={15} style={styles.searchText}>
+              <View style={styles.searchIcon}>
+                <AntDesign color={colors.text} name="search1" size={15} />
+              </View>
+              Find your next book...
+            </Text>
+          </Pressable>
+        </SharedElement>
       </Animated.View>
 
       <Animated.ScrollView
-        scrollEventThrottle={8}
+        scrollEventThrottle={1}
         onScroll={scrollHandler}
         contentContainerStyle={styles.scrollView}
       >
-        <List books={reading} title="Reading" navigation={navigation} />
-        <List books={completed} title="Completed" navigation={navigation} />
-        <List books={wishlist} title="Wishlist" navigation={navigation} />
+        <BookList books={reading} title="Reading" />
+        <BookList books={completed} title="Completed" />
+        <BookList books={wishlist} title="Wishlist" />
       </Animated.ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
-export default React.memo(BookList);
+export default React.memo(BookListScreen);

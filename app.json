@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "book-app",
+    "name": "Book List",
     "slug": "book-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,8 +9,9 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#f6f5f0"
+      "backgroundColor": "#1a1a1a"
     },
+    "backgroundColor": "#1a1a1a",
     "updates": {
       "fallbackToCacheTimeout": 0
     },
@@ -18,12 +19,13 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.himanshu266.book-app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#ff6b6b"
       }
     },
     "web": {
