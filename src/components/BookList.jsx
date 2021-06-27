@@ -11,26 +11,25 @@ import Book from './Book';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-// Horizontal list of books
+// horizontal flatlist of books
 function BookList({ books, title }) {
   const { width, margin, colors } = useTheme();
   const navigation = useNavigation();
   const scrollX = useSharedValue(0);
 
-  // Handle horizontal scroll
+  // handle horizontal scroll
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: ({ contentOffset }) => {
       scrollX.value = contentOffset.x;
     },
   });
 
+  // go to search screen
   const searchScreen = () => {
-    navigation.push('BookSearch', {
-      bookList: books,
-    });
+    navigation.push('BookSearch');
   };
 
-  // All styles
+  // all styles
   const styles = StyleSheet.create({
     list: {
       backgroundColor: colors.card,
@@ -50,7 +49,7 @@ function BookList({ books, title }) {
       alignItems: 'center',
       justifyContent: 'center',
       width: width - margin * 2,
-      paddingVertical: margin * 2,
+      paddingVertical: margin * 3,
       backgroundColor: colors.background,
     },
     emptyText: {
@@ -58,7 +57,7 @@ function BookList({ books, title }) {
     },
   });
 
-  // Empty list placeholder
+  // empty list placeholder
   const EmptyList = () => (
     <Pressable onPress={searchScreen} style={styles.emptyContainer}>
       <AntDesign color={colors.text} size={27} name="book" />
@@ -68,7 +67,7 @@ function BookList({ books, title }) {
     </Pressable>
   );
 
-  // Render book list
+  // render book list
   return (
     <View style={styles.list}>
       <View style={styles.heading}>
@@ -78,13 +77,15 @@ function BookList({ books, title }) {
       <AnimatedFlatList
         horizontal
         onScroll={scrollHandler}
-        scrollEventThrottle={8}
+        scrollEventThrottle={1}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         data={books}
         keyExtractor={(i) => i.bookId}
         renderItem={({ item, index }) => (
-          <Book book={item} index={index} scrollX={scrollX} navigation={navigation} />
+          <Pressable>
+            <Book book={item} index={index} scrollX={scrollX} />
+          </Pressable>
         )}
         ListEmptyComponent={<EmptyList />}
       />

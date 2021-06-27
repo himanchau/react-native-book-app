@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 
 // Themeable / Animatable Text
 function AnimatedText(props) {
-  const { colors } = useTheme();
+  const { colors, font } = useTheme();
   const {
     children, style, size, bold, center, color, animated,
   } = props;
@@ -14,7 +14,7 @@ function AnimatedText(props) {
     color: color || colors.text,
     fontSize: size || 14,
     fontWeight: bold ? '500' : '400',
-    fontFamily: 'Avenir Next',
+    fontFamily: font,
     textAlign: center ? 'center' : null,
   });
 
