@@ -48,6 +48,7 @@ function RootNavigator() {
         cardOverlayEnabled: true,
         cardStyle: { backgroundColor: 'transparent' },
       }}
+      detachInactiveScreens={false}
     >
       <BookStack.Screen name="Books" component={BooksScreen} />
       <BookStack.Screen name="BookList" component={BookListScreen} />
