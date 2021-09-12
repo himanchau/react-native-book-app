@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Image, Alert, StatusBar, Pressable,
+  View, Image, Alert, StatusBar, Pressable, StyleSheet,
 } from 'react-native';
 import Animated, {
   interpolate, withTiming, runOnJS,
@@ -172,6 +172,10 @@ function BookDetailsScreen({ navigation, route }) {
 
   // Styles
   const styles = {
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,.25)',
+    },
     closeIcon: {
       zIndex: 10,
       top: margin,
@@ -246,6 +250,7 @@ function BookDetailsScreen({ navigation, route }) {
   // Render book details
   return (
     <>
+      <View style={styles.overlay} />
       <PanGestureHandler
         ref={panRef}
         failOffsetY={-5}
