@@ -70,24 +70,22 @@ function BookListScreen({ navigation }) {
       left: 0,
       right: 0,
       zIndex: 10,
-      height: interpolate(scrollY.value, [-300, 0], [HEADER + 300, HEADER], 'clamp'),
       paddingTop: navbar,
       position: 'absolute',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      elevation: ios ? undefined : interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 10], 'clamp'),
-      shadowRadius: ios ? 4 : undefined,
-      shadowOffset: ios ? { height: 2, width: 0 } : undefined,
-      shadowOpacity: ios ? interpolate(scrollY.value, [0, HEADER - 100, HEADER - 80], [0, 0, 0.15], 'clamp') : undefined,
       backgroundColor: colors.background,
+      height: interpolate(scrollY.value, [-HEADER, 0], [HEADER * 2, HEADER], 'clamp'),
+      elevation: ios ? undefined : interpolate(scrollY.value, [HEADER - navbar, HEADER - navbar + 30], [0, 10], 'clamp'),
+      shadowOpacity: ios ? interpolate(scrollY.value, [HEADER - navbar, HEADER - navbar + 30], [0, 0.75], 'clamp') : undefined,
       transform: [
         { translateY: interpolate(scrollY.value, [0, HEADER - navbar], [0, -HEADER + navbar], 'clamp') },
       ],
     })),
     logo: useAnimatedStyle(() => ({
-      opacity: interpolate(scrollY.value, [0, HEADER - 100], [1, 0], 'clamp'),
+      opacity: interpolate(scrollY.value, [0, HEADER - navbar], [1, 0], 'clamp'),
       transform: [
-        { translateY: interpolate(scrollY.value, [-300, 0], [-150, 0], 'clamp') },
+        { translateY: interpolate(scrollY.value, [-HEADER, 0], [-HEADER / 2, 0], 'clamp') },
       ],
     })),
     lottie: {
@@ -100,28 +98,32 @@ function BookListScreen({ navigation }) {
       autoPlay: true,
     })),
     welcomeText: useAnimatedStyle(() => ({
-      transform: [
-        { scale: interpolate(scrollY.value, [0, HEADER - 110, HEADER - 90], [1, 1, 0.85], 'clamp') },
-        { translateY: interpolate(scrollY.value, [0, HEADER - 110, HEADER - 90], [0, 0, 10], 'clamp') },
-      ],
+      marginBottom: margin / 2,
+      opacity: interpolate(scrollY.value, [0, HEADER - navbar], [1, 0]),
     })),
-    searchInput: {
-      height: 50,
-      marginBottom: -25,
-      marginTop: margin / 2,
-      width: width - margin * 2,
-      borderWidth: 1,
+    searchInput: useAnimatedStyle(() => ({
       borderRadius: 25,
-      paddingHorizontal: 20,
-      justifyContent: 'center',
+      marginHorizontal: 20,
+      paddingHorizontal: margin,
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.card,
       borderColor: colors.background,
-    },
+      marginBottom: interpolate(scrollY.value, [HEADER - navbar, HEADER - navbar + 30], [-25, 6], 'clamp'),
+      height: interpolate(scrollY.value, [HEADER - navbar, HEADER - navbar + 30], [50, 38], 'clamp'),
+      width: interpolate(scrollY.value, [HEADER - navbar, HEADER - navbar + 30], [width - margin * 2, width - margin], 'clamp'),
+      borderWidth: interpolate(scrollY.value, [HEADER - navbar, HEADER - navbar + 30], [1, 0], 'clamp'),
+    })),
     searchIcon: {
       width: 30,
+      opacity: 0.3,
     },
     searchText: {
-      opacity: 0.3,
+      height: 38,
+      width: '100%',
+      opacity: 0.25,
+      lineHeight: 38,
+      fontSize: 15,
     },
     scrollView: {
       paddingTop: HEADER,
@@ -147,16 +149,16 @@ function BookListScreen({ navigation }) {
         <Text animated style={styles.welcomeText} center size={20}>
           {getGreeting()}
         </Text>
-        <SharedElement id="search">
-          <Pressable onPress={searchBooks} style={styles.searchInput}>
-            <Text size={15} style={styles.searchText}>
+        <Pressable onPress={searchBooks}>
+          <SharedElement id="search">
+            <Animated.View size={15} style={styles.searchInput}>
               <View style={styles.searchIcon}>
                 <AntDesign color={colors.text} name="search1" size={15} />
               </View>
-              Find your next book...
-            </Text>
-          </Pressable>
-        </SharedElement>
+              <Text style={styles.searchText}>Find your next book...</Text>
+            </Animated.View>
+          </SharedElement>
+        </Pressable>
       </Animated.View>
 
       <Animated.ScrollView

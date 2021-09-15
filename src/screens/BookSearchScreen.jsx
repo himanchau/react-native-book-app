@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, TextInput, Alert, Image, StyleSheet, Pressable, Keyboard,
+  View, TextInput, Alert, StyleSheet, Pressable, Keyboard,
 } from 'react-native';
 import Animated, {
   interpolate, Extrapolate, withTiming, useSharedValue, useAnimatedScrollHandler, useAnimatedStyle,
 } from 'react-native-reanimated';
 import { SharedElement } from 'react-navigation-shared-element';
 import { useTheme } from '@react-navigation/native';
+import { AntDesign } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 
@@ -15,12 +17,12 @@ import Book from '../components/SearchBook';
 import { useBooksState } from '../BookStore';
 import { setModal } from '../components/StatusModal';
 
-const bookImg = require('../images/books.png');
+const stack = require('../anims/stack.json');
 
 // Default screen
 function BookSearchScreen({ navigation }) {
   const {
-    colors, height, margin, status,
+    colors, height, margin, status, navbar,
   } = useTheme();
   const { books: bookList } = useBooksState();
   const [query, setQuery] = useState('');
@@ -80,10 +82,12 @@ function BookSearchScreen({ navigation }) {
   const anims = {
     search: useAnimatedStyle(() => ({
       zIndex: 10,
-      alignItems: 'center',
+      height: navbar,
+      alignItems: 'flex-end',
       flexDirection: 'row',
       paddingTop: status,
-      padding: margin / 2,
+      paddingBottom: 6,
+      paddingHorizontal: margin / 2,
       justifyContent: 'space-between',
       backgroundColor: colors.background,
       shadowOpacity: interpolate(scrollY.value, [0, 20], [0, 0.75], Extrapolate.CLAMP),
@@ -104,35 +108,47 @@ function BookSearchScreen({ navigation }) {
     },
     sharedElement: {
       flex: 1,
-      height: 40,
+      height: 38,
+    },
+    searchIcon: {
+      width: 30,
+      opacity: 0.3,
     },
     searchInput: {
       flex: 1,
-      height: 40,
+      height: 38,
       fontSize: 15,
       borderRadius: 20,
       color: colors.text,
-      paddingHorizontal: 20,
-      borderWidth: 1,
-      borderColor: colors.background,
+      paddingHorizontal: margin,
       backgroundColor: colors.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    textInput: {
+      height: 38,
+      width: '100%',
+      fontSize: 16,
     },
     saveButton: {
       width: 60,
+      height: 38,
+      lineHeight: 38,
       textAlign: 'right',
       color: '#888888',
     },
     placeholderBox: {
-      marginTop: margin * 2,
       alignItems: 'center',
+      marginTop: margin * 2,
       justifyContent: 'center',
     },
     placeholderImg: {
-      width: '55%',
-      height: height / 3,
+      opacity: 0.95,
+      height: height / 3.5,
+      marginBottom: margin,
     },
     placeholderText: {
-      marginVertical: margin,
+      fontSize: 15,
       paddingHorizontal: margin * 3,
     },
     scrollContainer: {
@@ -140,10 +156,16 @@ function BookSearchScreen({ navigation }) {
     },
   });
 
-  // empty screen placeholder
+  // empty screen placeholders
   const PlaceHolder = () => (
     <View style={styles.placeholderBox}>
-      <Image source={bookImg} resizeMode="contain" style={styles.placeholderImg} />
+      <LottieView
+        autoPlay
+        loop={false}
+        speed={0.8}
+        source={stack}
+        style={styles.placeholderImg}
+      />
       <Text center style={styles.placeholderText}>
         You can search by book title, author, keywords etc...
       </Text>
@@ -155,14 +177,20 @@ function BookSearchScreen({ navigation }) {
     <View onLayout={onLayout} style={styles.screen}>
       <Animated.View style={anims.search}>
         <SharedElement style={styles.sharedElement} id="search">
-          <TextInput
-            autoFocus
-            value={query}
-            autoCorrect={false}
-            onChangeText={(text) => setQuery(text)}
-            placeholder="Find your next book..."
-            style={styles.searchInput}
-          />
+          <View size={15} style={styles.searchInput}>
+            <View style={styles.searchIcon}>
+              <AntDesign color={colors.text} name="search1" size={15} />
+            </View>
+            <TextInput
+              autoFocus
+              width="100%"
+              value={query}
+              autoCorrect={false}
+              style={styles.textInput}
+              onChangeText={(text) => setQuery(text)}
+              placeholder="Find your next book..."
+            />
+          </View>
         </SharedElement>
         <Pressable onPress={goBack}>
           <Text bold style={styles.saveButton}>Done</Text>
