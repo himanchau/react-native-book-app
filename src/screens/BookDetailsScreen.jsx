@@ -248,7 +248,6 @@ function BookDetailsScreen({ navigation, route }) {
 
   // Find book in list
   const item = bookList.find((b) => b.bookId === book.bookId);
-  console.log(enabled);
 
   // Render book details
   return (
