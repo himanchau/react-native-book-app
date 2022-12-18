@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Image, Alert, StatusBar, Pressable, StyleSheet,
+  View, Image, StatusBar, Pressable, StyleSheet,
 } from 'react-native';
 import Animated, {
   interpolate, withTiming, runOnJS,
@@ -10,7 +10,7 @@ import Animated, {
 import { PanGestureHandler, ScrollView } from 'react-native-gesture-handler';
 import { useTheme, useIsFocused } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
-import { parse } from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
 import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 
@@ -21,6 +21,8 @@ import BookHeader from '../components/BookHeader';
 import { useBooksState } from '../BookStore';
 import { setModal } from '../components/StatusModal';
 
+const Console = console;
+const parser = new XMLParser();
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 // Get icon for status button
@@ -120,28 +122,28 @@ function BookDetailsScreen({ navigation, route }) {
         setRelated(bks);
       })
       .catch((error) => {
-        Alert.alert('Failed to get books', error);
+        Console.log('Failed to related books:', error);
       });
 
     // Book details
     axios.get(`https://www.goodreads.com/book/show/${book.bookId}.xml?key=Bi8vh08utrMY3HAqM9rkWA`)
       .then((resp) => {
-        const data = parse(resp.data);
+        const data = parser.parse(resp.data);
         setFullBook(data?.GoodreadsResponse?.book);
       })
-      .catch(() => {
-        Alert.alert('Failed to get books!');
+      .catch((error) => {
+        Console.log('Failed to get book details:', error);
       });
 
     // Author details
     axios.get(`https://www.goodreads.com/author/show.xml?key=Bi8vh08utrMY3HAqM9rkWA&id=${book.author.id}`)
       .then((resp) => {
-        const data = parse(resp.data);
+        const data = parser.parse(resp.data);
         setAuthor(data?.GoodreadsResponse?.author);
         loaded.value = withTiming(1);
       })
-      .catch(() => {
-        Alert.alert('Failed to get books!');
+      .catch((error) => {
+        Console.log('Failed to get author details:', error);
       });
   }, [book]);
 
@@ -246,6 +248,7 @@ function BookDetailsScreen({ navigation, route }) {
 
   // Find book in list
   const item = bookList.find((b) => b.bookId === book.bookId);
+  console.log(enabled);
 
   // Render book details
   return (
@@ -266,7 +269,6 @@ function BookDetailsScreen({ navigation, route }) {
 
           <Animated.View style={anims.scrollView}>
             <AnimatedScrollView
-              waitFor={enabled ? panRef : undefined}
               onScroll={scrollHandler}
               scrollEventThrottle={1}
               contentContainerStyle={styles.scrollContainer}
