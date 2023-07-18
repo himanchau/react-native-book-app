@@ -53,8 +53,3 @@ https://github.com/lottie-react-native/lottie-react-native
 **Android**  
 If you're running into issues with Android please make sure to check that reanimated and shared navigation element (v5) are installed properly with the right versions and Layout Animations have been enabled.
 
-**React Native Community**  
-Was this helpful? Want to see more code like this? Would you like this as an template? Just want share your thoughts? Catch me at [@himanshuchauu](https://twitter.com/himanchauu).
-
-[Caffeine Appreciation](https://www.buymeacoffee.com/himanchau)
-
