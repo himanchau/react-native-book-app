@@ -12,6 +12,7 @@ const mockData = [
         relatedIds: [2,3],
         author: {
             name: 'David King',
+            image_url: 'https://th.bing.com/th/id/OIP.p0a8fUSQQAd99wh0AZdPJAHaEo?w=155&h=182&c=7&r=0&o=5&pid=1.7',
             about: 'dwqnjkdwnqwjk 1223',
         },
     },
@@ -26,6 +27,7 @@ const mockData = [
         relatedIds: [1,2],
         author: {
             name: 'David King father',
+            image_url: 'https://th.bing.com/th/id/OIP.p0a8fUSQQAd99wh0AZdPJAHaEo?w=155&h=182&c=7&r=0&o=5&pid=1.7',
             about: 'dwqnjkdwnqwjk 1223',
         } 
     },
@@ -40,6 +42,7 @@ const mockData = [
         relatedIds: [1,2],
         author: {
             name: 'Tom',
+            image_url: 'https://th.bing.com/th/id/OIP.X550xngH_XGXcgSogi1XLAHaEK?w=304&h=180&c=7&r=0&o=5&pid=1.7',
             about: 'dwqnjkdwnqwjk 1223',
         } 
     },
@@ -54,6 +57,7 @@ const mockData = [
         relatedIds: [],
         author: {
             name: 'Jerry',
+            image_url: 'https://th.bing.com/th/id/OIP.X550xngH_XGXcgSogi1XLAHaEK?w=304&h=180&c=7&r=0&o=5&pid=1.7',
             about: 'dwqnjkdwnqwjk 1223',
         } 
     },
@@ -68,6 +72,7 @@ const mockData = [
         relatedIds: [],
         author: {
             name: 'Kenin',
+            image_url: 'https://th.bing.com/th/id/OIP.9Hc_BKrM_ONJ0wcxJ-liAAHaEK?w=278&h=180&c=7&r=0&o=5&pid=1.7',
             about: 'dwqnjkdwnqwjk 1223',
         } 
     },
@@ -82,6 +87,7 @@ const mockData = [
         relatedIds: [],
         author: {
             name: 'Kenin',
+            image_url: 'https://th.bing.com/th/id/OIP.9Hc_BKrM_ONJ0wcxJ-liAAHaEK?w=278&h=180&c=7&r=0&o=5&pid=1.7',
             about: 'dwqnjkdwnqwjk 1223',
         } 
     },
