@@ -61,20 +61,10 @@ function BookSearchScreen({ navigation }) {
     Haptics.selectionAsync();
   };
 
-  // search query
   useEffect(() => {
     if (query.length > 0) {
-      axios.get(`https://www.goodreads.com/book/auto_complete?format=json&q=${query}`)
-        .then((resp) => {
-          const bks = resp.data.map((book) => ({
-            ...book,
-            imageUrl: book.imageUrl.replace(/_..../, '_SY475_'),
-          }));
-          setBooks(bks);
-        })
-        .catch((error) => {
-          Alert.alert('Failed to get books', error);
-        });
+      const matchList =  bookList.filter(item=>item.bookTitleBare.includes(query)||item.description.includes(query)||item.author.name.includes(query))
+      setBooks(matchList)
     }
   }, [query]);
 

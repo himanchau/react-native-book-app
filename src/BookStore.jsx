@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { proxy, useSnapshot } from 'valtio';
+import loadMockData from './mock.js'
 
 // global state
 const state = proxy({
@@ -12,7 +13,14 @@ async function loadBooks() {
   const data = json ? JSON.parse(json) : [];
   state.books = data;
 }
-loadBooks();
+
+
+loadMockData().then(()=>{
+  setTimeout(()=>{
+    loadBooks();
+  },100)
+})
+
 
 // save books to async storage
 async function saveBooks() {

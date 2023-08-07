@@ -110,42 +110,19 @@ function BookDetailsScreen({ navigation, route }) {
     },
   });
 
+  // Find book in list
+  const item = bookList.find((b) => b.bookId === book.bookId);
+
   // Load book details
   useEffect(() => {
-    // Related Books
-    axios.get(`https://www.goodreads.com/book/auto_complete?format=json&q=${book.author.name}`)
-      .then((resp) => {
-        const bks = resp.data.filter((bk, i, arr) => {
-          arr[i].imageUrl = bk.imageUrl.replace(/_..../, '_SY475_');
-          return (book.bookId !== bk.bookId);
-        });
-        setRelated(bks);
-      })
-      .catch((error) => {
-        Console.log('Failed to related books:', error);
-      });
-
-    // Book details
-    axios.get(`https://www.goodreads.com/book/show/${book.bookId}.xml?key=Bi8vh08utrMY3HAqM9rkWA`)
-      .then((resp) => {
-        const data = parser.parse(resp.data);
-        setFullBook(data?.GoodreadsResponse?.book);
-      })
-      .catch((error) => {
-        Console.log('Failed to get book details:', error);
-      });
-
-    // Author details
-    axios.get(`https://www.goodreads.com/author/show.xml?key=Bi8vh08utrMY3HAqM9rkWA&id=${book.author.id}`)
-      .then((resp) => {
-        const data = parser.parse(resp.data);
-        setAuthor(data?.GoodreadsResponse?.author);
-        loaded.value = withTiming(1);
-      })
-      .catch((error) => {
-        Console.log('Failed to get author details:', error);
-      });
-  }, [book]);
+    Promise.resolve(item).then(bookContent=>{
+      setFullBook(bookContent)
+      setAuthor(bookContent.author||{});
+      const relatedBooks = bookList.filter(el=>bookContent.relatedIds&&bookContent.relatedIds.includes(el.bookId))
+      setRelated(relatedBooks)
+      loaded.value = withTiming(1);
+    })
+  },[book]);
 
   // Screen anims
   const anims = {
@@ -246,8 +223,6 @@ function BookDetailsScreen({ navigation, route }) {
     },
   };
 
-  // Find book in list
-  const item = bookList.find((b) => b.bookId === book.bookId);
 
   // Render book details
   return (
@@ -263,7 +238,7 @@ function BookDetailsScreen({ navigation, route }) {
       >
         <Animated.View style={anims.screen}>
           {ios && <StatusBar hidden={useIsFocused()} animated />}
-          <BookHeader scrollY={scrollY} book={book} />
+          <BookHeader scrollY={scrollY} book={item} />
           <AntDesign size={27} name="close" onPress={goBack} style={styles.closeIcon} />
 
           <Animated.View style={anims.scrollView}>
@@ -275,11 +250,11 @@ function BookDetailsScreen({ navigation, route }) {
               <View style={styles.detailsBox}>
                 <View style={styles.detailsRow}>
                   <Text center size={13}>RATING</Text>
-                  <Text bold style={styles.subDetails}>{book.avgRating}</Text>
+                  <Text bold style={styles.subDetails}>{item.avgRating}</Text>
                 </View>
                 <View style={[styles.detailsRow, styles.detailsRowBorder]}>
                   <Text center size={13}>PAGES</Text>
-                  <Text bold style={styles.subDetails}>{book.numPages}</Text>
+                  <Text bold style={styles.subDetails}>{item.numPages}</Text>
                 </View>
                 <Pressable onPress={openSheet} style={styles.detailsRow}>
                   <Text center size={13}>STATUS</Text>
